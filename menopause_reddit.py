@@ -1,12 +1,51 @@
 import urllib.request
+import urllib.parse
 import json
 import time
+import os
+import base64
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET", "")
+USER_AGENT = "menopause-research/2.0 by research-app"
+
+_token_cache = {"token": None, "expires": 0}
+
+
+def _get_token():
+    if _token_cache["token"] and time.time() < _token_cache["expires"]:
+        return _token_cache["token"]
+    creds = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    req = urllib.request.Request(
+        "https://www.reddit.com/api/v1/access_token",
+        data=b"grant_type=client_credentials",
+        headers={
+            "Authorization": f"Basic {creds}",
+            "User-Agent": USER_AGENT,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        data = json.loads(r.read())
+    _token_cache["token"] = data["access_token"]
+    _token_cache["expires"] = time.time() + data["expires_in"] - 60
+    return _token_cache["token"]
 
 
 def fetch(url):
-    req = urllib.request.Request(url, headers=HEADERS)
+    if CLIENT_ID and CLIENT_SECRET:
+        token = _get_token()
+        oauth_url = url.replace("https://www.reddit.com", "https://oauth.reddit.com")
+        req = urllib.request.Request(
+            oauth_url,
+            headers={"Authorization": f"bearer {token}", "User-Agent": USER_AGENT},
+        )
+    else:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": USER_AGENT},
+        )
     with urllib.request.urlopen(req, timeout=15) as r:
         return json.loads(r.read())
 
@@ -63,14 +102,13 @@ if __name__ == "__main__":
             print(f"    Preview: {post['selftext'][:150]}...")
         print(f"    URL: {post['url']}")
 
-        # Fetch top comments for first 3 posts
         if i <= 3:
-            time.sleep(1)  # be polite to Reddit's servers
+            time.sleep(1)
             comments = get_comments(post["url"].replace("https://reddit.com", ""))
             if comments:
                 print(f"    Top comments:")
                 for j, c in enumerate(comments[:3], 1):
-                    print(f"      {j}. {c[:150]}")
+                    print(f"      {j}. {c['body'][:150]}")
 
     print("\n" + "=" * 60)
     print("Done!")
