@@ -41,27 +41,27 @@ def get_comments(permalink, limit=5):
     return comments
 
 
-# --- Main ---
-print("=" * 60)
-print("r/menopause — Top 10 Hot Posts")
-print("=" * 60)
+if __name__ == "__main__":
+    print("=" * 60)
+    print("r/menopause — Top 10 Hot Posts")
+    print("=" * 60)
 
-posts = get_posts(limit=10)
-for i, post in enumerate(posts, 1):
-    print(f"\n[{i}] {post['title']}")
-    print(f"    Score: {post['score']}  |  Comments: {post['num_comments']}")
-    if post["selftext"]:
-        print(f"    Preview: {post['selftext'][:150]}...")
-    print(f"    URL: {post['url']}")
+    posts = get_posts(limit=10)
+    for i, post in enumerate(posts, 1):
+        print(f"\n[{i}] {post['title']}")
+        print(f"    Score: {post['score']}  |  Comments: {post['num_comments']}")
+        if post["selftext"]:
+            print(f"    Preview: {post['selftext'][:150]}...")
+        print(f"    URL: {post['url']}")
 
-    # Fetch top comments for first 3 posts
-    if i <= 3:
-        time.sleep(1)  # be polite to Reddit's servers
-        comments = get_comments(post["url"].replace("https://reddit.com", ""))
-        if comments:
-            print(f"    Top comments:")
-            for j, c in enumerate(comments[:3], 1):
-                print(f"      {j}. {c[:150]}")
+        # Fetch top comments for first 3 posts
+        if i <= 3:
+            time.sleep(1)  # be polite to Reddit's servers
+            comments = get_comments(post["url"].replace("https://reddit.com", ""))
+            if comments:
+                print(f"    Top comments:")
+                for j, c in enumerate(comments[:3], 1):
+                    print(f"      {j}. {c[:150]}")
 
-print("\n" + "=" * 60)
-print("Done!")
+    print("\n" + "=" * 60)
+    print("Done!")

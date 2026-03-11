@@ -217,6 +217,18 @@
 
     .no-comments { font-size: .82rem; color: #aaa; padding: .5rem 0; }
 
+    /* mock banner */
+    .mock-banner {
+      background: #fff8e1;
+      color: #7a5c00;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: .6rem 1rem;
+      font-size: .82rem;
+      max-width: 860px;
+      margin: 0 auto .6rem;
+    }
+
     /* error */
     .error-msg {
       background: #fff3f0;
@@ -258,6 +270,9 @@
   <input type="text" id="search" placeholder="Filter posts by keyword…" oninput="filterPosts()" />
 </div>
 
+<div id="mock-banner" class="mock-banner" style="display:none">
+  ⚠️ <strong>Demo mode:</strong> Reddit is not reachable from this server. Showing sample data so you can preview the interface. Run locally to see live posts.
+</div>
 <div id="status"></div>
 <div id="error" class="error-msg" style="display:none"></div>
 <div id="posts"></div>
@@ -281,6 +296,8 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);
       allPosts = data.posts;
+      document.getElementById("mock-banner").style.display =
+        data.source === "mock" ? "block" : "none";
       renderPosts(allPosts);
     } catch (e) {
       showError(e.message);
