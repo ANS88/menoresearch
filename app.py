@@ -101,7 +101,7 @@ def index():
 @app.route("/api/posts")
 def api_posts():
     category = request.args.get("category", "hot")
-    limit = int(request.args.get("limit", 10))
+    limit = int(request.args.get("limit", 25))
     try:
         posts = get_posts(category=category, limit=limit)
         return jsonify({"ok": True, "posts": posts, "source": "live"})
@@ -124,11 +124,12 @@ def api_comments():
     except Exception as e:
         # Fall back to mock comments
         key = next((k for k in MOCK_COMMENTS if k in permalink), None)
-        comments = MOCK_COMMENTS.get(key, [
+        raw = MOCK_COMMENTS.get(key, [
             "This is a great question. I had a similar experience and found that talking to a menopause specialist rather than a GP made all the difference.",
             "Thank you for bringing this up. So many of us deal with this silently.",
             "I recommend checking out the wiki in this subreddit — there's a lot of helpful information compiled there.",
         ])
+        comments = [{"author": "redditor", "body": c, "score": 0} for c in raw]
         return jsonify({"ok": True, "comments": comments, "source": "mock", "warning": str(e)})
 
 

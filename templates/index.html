@@ -261,7 +261,7 @@
   </select>
 
   <label for="limit">Posts:</label>
-  <input type="number" id="limit" value="10" min="1" max="50" style="width:64px" />
+  <input type="number" id="limit" value="25" min="1" max="100" style="width:64px" />
 
   <button id="loadBtn" onclick="loadPosts()">Load Posts</button>
 </div>
@@ -326,14 +326,26 @@
     container.innerHTML = posts.map((p, i) => postCard(p, i)).join("");
   }
 
+  function timeAgo(utc) {
+    if (!utc) return "";
+    const diff = Math.floor(Date.now() / 1000 - utc);
+    if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+    if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+    return Math.floor(diff / 86400) + "d ago";
+  }
+
   function postCard(post, idx) {
     const score = post.score >= 1000
       ? (post.score / 1000).toFixed(1) + "k"
       : post.score;
+    const flair = post.flair
+      ? `<span style="background:#ff45001a;color:#ff4500;border-radius:4px;padding:1px 6px;font-size:.72rem;font-weight:600">${esc(post.flair)}</span>`
+      : "";
     const preview = post.selftext
-      ? `<div class="post-preview">${esc(post.selftext.slice(0, 200))}${post.selftext.length > 200 ? "…" : ""}</div>`
+      ? `<div class="post-preview">${esc(post.selftext)}</div>`
       : "";
     const permalink = post.url.replace("https://reddit.com", "");
+    const pct = post.upvote_ratio ? Math.round(post.upvote_ratio * 100) + "% upvoted" : "";
     return `
       <div class="post-card" id="card-${idx}">
         <div class="post-header" onclick="toggleComments(${idx}, '${escAttr(permalink)}')">
@@ -343,12 +355,16 @@
           </div>
           <div class="post-body">
             <div class="post-title">
+              ${flair}
               <a href="${escAttr(post.url)}" target="_blank" onclick="event.stopPropagation()">
                 ${esc(post.title)}
               </a>
             </div>
             <div class="post-meta">
+              <span>u/${esc(post.author || "?")}</span>
               <span>💬 ${post.num_comments} comments</span>
+              ${pct ? `<span>${pct}</span>` : ""}
+              ${post.created_utc ? `<span>${timeAgo(post.created_utc)}</span>` : ""}
               <span><a href="${escAttr(post.url)}" target="_blank" onclick="event.stopPropagation()" style="color:#aaa">open ↗</a></span>
             </div>
             ${preview}
@@ -383,12 +399,18 @@
       if (!data.comments.length) {
         panel.innerHTML = `<div class="no-comments">No comments yet.</div>`;
       } else {
-        panel.innerHTML = data.comments.map((c, i) =>
-          `<div class="comment">
-            <div class="comment-num">Comment ${i + 1}</div>
-            ${esc(c)}
-          </div>`
-        ).join("");
+        panel.innerHTML = data.comments.map((c) => {
+          const body = typeof c === "string" ? c : c.body;
+          const author = typeof c === "object" ? c.author : "";
+          const score = typeof c === "object" ? c.score : null;
+          return `<div class="comment">
+            <div class="comment-num">
+              ${author ? `u/${esc(author)}` : ""}
+              ${score !== null ? `· ${score} pts` : ""}
+            </div>
+            ${esc(body)}
+          </div>`;
+        }).join("");
       }
       panel.dataset.loaded = "1";
     } catch (e) {

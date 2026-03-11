@@ -2,7 +2,7 @@ import urllib.request
 import json
 import time
 
-HEADERS = {"User-Agent": "menopause-research/1.0"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
 
 
 def fetch(url):
@@ -11,7 +11,7 @@ def fetch(url):
         return json.loads(r.read())
 
 
-def get_posts(subreddit="menopause", category="hot", limit=10):
+def get_posts(subreddit="menopause", category="hot", limit=25):
     url = f"https://www.reddit.com/r/{subreddit}/{category}.json?limit={limit}"
     data = fetch(url)
     posts = data["data"]["children"]
@@ -20,22 +20,31 @@ def get_posts(subreddit="menopause", category="hot", limit=10):
         d = p["data"]
         results.append({
             "title": d["title"],
+            "author": d.get("author", ""),
             "score": d["score"],
+            "upvote_ratio": d.get("upvote_ratio", 0),
             "num_comments": d["num_comments"],
+            "created_utc": d.get("created_utc", 0),
             "url": "https://reddit.com" + d["permalink"],
-            "selftext": d.get("selftext", "")[:300]  # first 300 chars
+            "flair": d.get("link_flair_text", ""),
+            "selftext": d.get("selftext", ""),
         })
     return results
 
 
-def get_comments(permalink, limit=5):
-    url = f"https://www.reddit.com{permalink}.json?limit={limit}"
+def get_comments(permalink, limit=20):
+    url = f"https://www.reddit.com{permalink}.json?limit={limit}&depth=2"
     data = fetch(url)
     comments = []
     try:
         for c in data[1]["data"]["children"]:
             if c["kind"] == "t1":
-                comments.append(c["data"]["body"][:300])
+                cd = c["data"]
+                comments.append({
+                    "author": cd.get("author", ""),
+                    "body": cd.get("body", ""),
+                    "score": cd.get("score", 0),
+                })
     except Exception:
         pass
     return comments
