@@ -173,6 +173,31 @@ def api_keywords():
     return jsonify({"ok": True, "keywords": keywords, "source": source})
 
 
+@app.route("/api/stats")
+def api_stats():
+    try:
+        data = fetch("https://www.reddit.com/r/menopause/about.json")
+        d = data["data"]
+        return jsonify({
+            "ok": True,
+            "subscribers": d.get("subscribers", 0),
+            "active": d.get("active_user_count", 0),
+            "created_utc": d.get("created_utc", 0),
+            "title": d.get("title", ""),
+            "source": "live",
+        })
+    except Exception as e:
+        return jsonify({
+            "ok": True,
+            "subscribers": 172000,
+            "active": 312,
+            "created_utc": 1279152000,
+            "title": "Menopause",
+            "source": "mock",
+            "warning": str(e),
+        })
+
+
 def _pearson(x, y):
     """Pearson r between two equal-length lists. Returns 0 if constant."""
     n = len(x)

@@ -26,6 +26,20 @@
     }
     header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.3px; }
     header .sub { font-size: .85rem; opacity: .85; }
+    .stats-bar {
+      display: flex;
+      gap: 1.4rem;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.2;
+    }
+    .stat-val { font-size: 1rem; font-weight: 700; }
+    .stat-lbl { font-size: .65rem; opacity: .75; text-transform: uppercase; letter-spacing: .4px; }
 
     /* ── Controls ── */
     .controls {
@@ -394,6 +408,11 @@
     <h1>r/menopause Research Viewer</h1>
     <div class="sub">Browse top posts and community discussions</div>
   </div>
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-item"><span class="stat-val" id="stat-members">…</span><span class="stat-lbl">Members</span></div>
+    <div class="stat-item"><span class="stat-val" id="stat-active">…</span><span class="stat-lbl">Online</span></div>
+    <div class="stat-item"><span class="stat-val" id="stat-age">…</span><span class="stat-lbl">Years old</span></div>
+  </div>
 </header>
 
 <div class="controls">
@@ -751,6 +770,20 @@
       .replace(/"/g, "&quot;");
   }
   function escAttr(s) { return esc(s); }
+
+  // Load subreddit stats into header
+  (async () => {
+    try {
+      const res = await fetch("/api/stats");
+      const d = await res.json();
+      if (!d.ok) return;
+      document.getElementById("stat-members").textContent =
+        d.subscribers >= 1000 ? (d.subscribers / 1000).toFixed(0) + "k" : d.subscribers;
+      document.getElementById("stat-active").textContent = d.active.toLocaleString();
+      const years = ((Date.now() / 1000 - d.created_utc) / 31536000).toFixed(1);
+      document.getElementById("stat-age").textContent = years;
+    } catch (_) {}
+  })();
 
   // Load on startup
   loadPosts();
