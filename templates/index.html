@@ -628,11 +628,12 @@
     return parseChildren(data.data.children);
   }
 
-  async function fetchAllPostsBrowser(category, maxPages, onProgress) {
+  async function fetchAllPostsBrowser(category, maxPages, onProgress, extraParam = "") {
     const posts = [];
     let after = null;
     for (let page = 0; page < maxPages; page++) {
       let url = `https://www.reddit.com/r/menopause/${category}.json?limit=100&raw_json=1`;
+      if (extraParam) url += `&${extraParam}`;
       if (after) url += `&after=${after}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Reddit returned ${res.status}`);
@@ -1098,16 +1099,17 @@
     if (analyticsLoaded) return;
 
     const el = document.getElementById("analytics-content");
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (0)</div>`;
 
-    // Use already-loaded posts first (instant, no Reddit request needed)
-    let posts = allPosts.slice();
-
-    if (!posts.length) {
-      // No posts loaded yet — fetch a single page
-      el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching posts…</div>`;
-      try {
-        posts = await fetchRedditDirect("new", 100);
-      } catch (_) {}
+    // Fetch top-all-time posts for historical coverage (up to 1000 posts spanning years)
+    let posts = [];
+    try {
+      posts = await fetchAllPostsBrowser("top", 10, (n) => {
+        el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (${n})</div>`;
+      }, "t=all");
+    } catch (_) {
+      // Fall back to already-loaded posts
+      posts = allPosts.slice();
     }
 
     if (!posts.length) {
@@ -1116,7 +1118,7 @@
     }
 
     el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Computing analytics for ${posts.length} posts…</div>`;
-    document.getElementById("analytics-source").textContent = `(${posts.length} posts)`;
+    document.getElementById("analytics-source").textContent = `(${posts.length} all-time top posts)`;
     try {
       renderAnalytics(posts);
       analyticsLoaded = true;
@@ -1140,23 +1142,32 @@
     const avgComments = Math.round(totalComments / posts.length);
 
     const timestamps = posts.map(p => p.created_utc).filter(t => t > 0);
+    const oldest = timestamps.length ? timestamps.reduce((a, b) => a < b ? a : b) : 0;
+    const newest = timestamps.length ? timestamps.reduce((a, b) => a > b ? a : b) : 0;
+    const spanDays = oldest ? (newest - oldest) / 86400 : 0;
+    const allTime = spanDays > 180;
+
     let postsPerDay = "—", postsPerWeek = "—", dateRange = "—";
-    if (timestamps.length > 1) {
-      const oldest = timestamps.reduce((a, b) => a < b ? a : b);
-      const newest = timestamps.reduce((a, b) => a > b ? a : b);
-      const spanDays = (newest - oldest) / 86400;
-      if (spanDays > 0) {
-        postsPerDay = (posts.length / spanDays).toFixed(1);
-        postsPerWeek = Math.round(posts.length / spanDays * 7);
-      }
+    if (spanDays > 0) {
+      postsPerDay = (posts.length / spanDays).toFixed(1);
+      postsPerWeek = Math.round(posts.length / spanDays * 7);
       const fmt = utc => new Date(utc * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
       dateRange = `${fmt(oldest)} – ${fmt(newest)}`;
     }
 
-    // Weekly bucketing: key by Monday's YYYY-MM-DD
+    // Yearly bucketing (for all-time view)
+    const yearMap = {};
+    timestamps.forEach(t => {
+      const yr = new Date(t * 1000).getUTCFullYear();
+      yearMap[yr] = (yearMap[yr] || 0) + 1;
+    });
+    const years = Object.keys(yearMap).sort();
+    const yearMax = years.reduce((m, y) => Math.max(m, yearMap[y]), 1);
+
+    // Weekly bucketing (for recent view)
     function mondayKey(utc) {
       const d = new Date(utc * 1000);
-      const dow = d.getUTCDay(); // 0=Sun
+      const dow = d.getUTCDay();
       const daysBack = dow === 0 ? 6 : dow - 1;
       const mon = new Date((utc - daysBack * 86400) * 1000);
       return `${mon.getUTCFullYear()}-${String(mon.getUTCMonth()+1).padStart(2,"0")}-${String(mon.getUTCDate()).padStart(2,"0")}`;
@@ -1165,21 +1176,39 @@
       const [yr, mo, dy] = key.split("-");
       return new Date(+yr, +mo - 1, +dy).toLocaleDateString("en-US", { month: "short", day: "numeric" });
     }
-
     const weekMap = {};
-    timestamps.forEach(t => {
-      const k = mondayKey(t);
-      weekMap[k] = (weekMap[k] || 0) + 1;
-    });
+    timestamps.forEach(t => { const k = mondayKey(t); weekMap[k] = (weekMap[k] || 0) + 1; });
     const weeks = Object.keys(weekMap).sort().slice(-12);
-    const weekMax = weeks.length ? weeks.reduce((m, w) => Math.max(m, weekMap[w]), 0) : 1;
+    const weekMax = weeks.reduce((m, w) => Math.max(m, weekMap[w]), 1);
 
     // Day-of-week
     const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const dayCounts = new Array(7).fill(0);
     timestamps.forEach(t => { dayCounts[new Date(t * 1000).getUTCDay()]++; });
     const dayMax = dayCounts.reduce((a, b) => Math.max(a, b), 1);
-    const busiest = DAYS[dayCounts.indexOf(Math.max(...dayCounts))];
+    const busiest = DAYS[dayCounts.indexOf(dayCounts.reduce((a, b) => Math.max(a, b), 0))];
+
+    const timeChart = allTime ? `
+      <div class="analytics-chart-title">Top posts by year (all time)</div>
+      ${years.length ? years.map(yr => `
+        <div class="week-row">
+          <span class="week-label">${yr}</span>
+          <div class="week-bar-wrap">
+            <div class="week-bar" style="width:${Math.round(yearMap[yr] / yearMax * 100)}%"></div>
+          </div>
+          <span class="week-count">${yearMap[yr]}</span>
+        </div>`).join("") : `<div style="color:#aaa;font-size:.82rem">No timestamp data.</div>`}
+    ` : `
+      <div class="analytics-chart-title">Posts per week (last ${weeks.length} weeks)</div>
+      ${weeks.length ? weeks.map(wk => `
+        <div class="week-row">
+          <span class="week-label">${fmtMonday(wk)}</span>
+          <div class="week-bar-wrap">
+            <div class="week-bar" style="width:${Math.round(weekMap[wk] / weekMax * 100)}%"></div>
+          </div>
+          <span class="week-count">${weekMap[wk]}</span>
+        </div>`).join("") : `<div style="color:#aaa;font-size:.82rem">No timestamp data.</div>`}
+    `;
 
     el.innerHTML = `
       <div class="analytics-summary">
@@ -1191,17 +1220,7 @@
         <div class="analytics-stat"><span class="aval">${busiest}</span><span class="albl">Busiest day</span></div>
       </div>
       <div style="font-size:.72rem;color:#aaa;margin-bottom:1rem">Date range: ${dateRange}</div>
-
-      <div class="analytics-chart-title">Posts per week (last ${weeks.length} weeks)</div>
-      ${weeks.length ? weeks.map(wk => `
-        <div class="week-row">
-          <span class="week-label">${fmtMonday(wk)}</span>
-          <div class="week-bar-wrap">
-            <div class="week-bar" style="width:${Math.round(weekMap[wk] / weekMax * 100)}%"></div>
-          </div>
-          <span class="week-count">${weekMap[wk]}</span>
-        </div>`).join("") : `<div style="color:#aaa;font-size:.82rem">No timestamp data.</div>`}
-
+      ${timeChart}
       <div class="analytics-chart-title" style="margin-top:1.1rem">Posts by day of week</div>
       <div class="day-grid">
         ${DAYS.map((d, i) => `
