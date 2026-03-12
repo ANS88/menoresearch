@@ -269,6 +269,99 @@
       min-width: 28px;
     }
 
+    /* ── Correlation section ── */
+    #corr-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #corr-section.open { display: block; }
+    .corr-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1rem 1.2rem;
+    }
+    .corr-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .8rem;
+      color: #333;
+    }
+    .corr-tabs {
+      display: flex;
+      gap: .4rem;
+      margin-bottom: .9rem;
+    }
+    .corr-tab {
+      padding: .3rem .8rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #f6f7f8;
+      color: #555;
+      transition: background .15s;
+    }
+    .corr-tab.active { background: #ff4500; color: #fff; border-color: #ff4500; }
+
+    /* heatmap */
+    .heatmap-wrap { overflow-x: auto; }
+    .heatmap-table {
+      border-collapse: collapse;
+      font-size: .68rem;
+      white-space: nowrap;
+    }
+    .heatmap-table th {
+      padding: 2px 4px;
+      color: #555;
+      font-weight: 600;
+      text-align: left;
+    }
+    .heatmap-table td {
+      width: 22px;
+      height: 22px;
+      text-align: center;
+      font-size: .6rem;
+      cursor: default;
+      border: 1px solid #f0f0f0;
+    }
+
+    /* pairs list */
+    .pair-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .3rem;
+    }
+    .pair-words {
+      min-width: 200px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: #333;
+    }
+    .pair-bar-wrap {
+      flex: 1;
+      background: #f0f0f0;
+      border-radius: 4px;
+      height: 16px;
+      overflow: hidden;
+    }
+    .pair-bar {
+      height: 100%;
+      background: #6c63ff;
+      border-radius: 4px;
+      transition: width .4s ease;
+    }
+    .pair-score {
+      font-size: .75rem;
+      color: #888;
+      min-width: 38px;
+      text-align: right;
+    }
+
     /* mock banner */
     .mock-banner {
       background: #fff8e1;
@@ -317,6 +410,19 @@
 
   <button id="loadBtn" onclick="loadPosts()">Load Posts</button>
   <button id="kwBtn" onclick="toggleKeywords()">Show Keywords</button>
+  <button id="corrBtn" onclick="toggleCorrelation()">Show Correlation</button>
+</div>
+
+<div id="corr-section">
+  <div class="corr-panel">
+    <h2>Keyword Correlation <span id="corr-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div class="corr-tabs">
+      <button class="corr-tab active" onclick="showCorrTab('pairs')">Top Pairs</button>
+      <button class="corr-tab" onclick="showCorrTab('heatmap')">Heatmap</button>
+    </div>
+    <div id="corr-pairs"></div>
+    <div id="corr-heatmap" style="display:none"></div>
+  </div>
 </div>
 
 <div id="keywords-section">
@@ -477,6 +583,97 @@
     } catch (e) {
       panel.innerHTML = `<div class="no-comments" style="color:#c0392b">Failed to load comments: ${esc(e.message)}</div>`;
     }
+  }
+
+  // ── Correlation ──────────────────────────────────────────
+  let corrLoaded = false;
+  let corrData = null;
+  let activeCorrTab = "pairs";
+
+  async function toggleCorrelation() {
+    const section = document.getElementById("corr-section");
+    const btn = document.getElementById("corrBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Show Correlation";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Correlation";
+    if (corrLoaded) return;
+
+    const category = document.getElementById("category").value;
+    const limit = document.getElementById("limit").value;
+    document.getElementById("corr-pairs").innerHTML =
+      `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+    try {
+      const res = await fetch(`/api/correlation?category=${category}&limit=${limit}&top=20`);
+      const data = await res.json();
+      if (!data.ok) throw new Error("failed");
+      corrData = data;
+      document.getElementById("corr-source").textContent =
+        data.source === "mock" ? "(demo data)" : "(live data)";
+      renderCorrPairs(data.pairs);
+      renderHeatmap(data.keywords, data.matrix);
+      corrLoaded = true;
+    } catch (e) {
+      document.getElementById("corr-pairs").innerHTML =
+        `<div style="color:#c0392b;font-size:.85rem">Failed to load correlation data.</div>`;
+    }
+  }
+
+  function showCorrTab(tab) {
+    activeCorrTab = tab;
+    document.querySelectorAll(".corr-tab").forEach((el, i) => {
+      el.classList.toggle("active", (i === 0 && tab === "pairs") || (i === 1 && tab === "heatmap"));
+    });
+    document.getElementById("corr-pairs").style.display = tab === "pairs" ? "block" : "none";
+    document.getElementById("corr-heatmap").style.display = tab === "heatmap" ? "block" : "none";
+  }
+
+  function renderCorrPairs(pairs) {
+    if (!pairs.length) {
+      document.getElementById("corr-pairs").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">No co-occurring keyword pairs found.</div>`;
+      return;
+    }
+    const max = pairs[0].jaccard;
+    document.getElementById("corr-pairs").innerHTML = pairs.slice(0, 30).map(p => `
+      <div class="pair-row">
+        <span class="pair-words">${esc(p.word_a)} &amp; ${esc(p.word_b)}</span>
+        <div class="pair-bar-wrap">
+          <div class="pair-bar" style="width:${Math.round(p.jaccard / max * 100)}%"></div>
+        </div>
+        <span class="pair-score">${p.jaccard.toFixed(2)} <span style="font-size:.65rem;color:#bbb">(${p.co_count})</span></span>
+      </div>`).join("");
+  }
+
+  function renderHeatmap(keywords, matrix) {
+    const n = keywords.length;
+    const maxVal = Math.max(...matrix.flat().filter(v => v > 0), 1);
+
+    const headerRow = `<tr>
+      <th></th>
+      ${keywords.map((_, i) => `<th style="transform:rotate(-55deg);transform-origin:bottom left;height:70px;vertical-align:bottom;padding-bottom:2px">${esc(keywords[i])}</th>`).join("")}
+    </tr>`;
+
+    const rows = keywords.map((kw, i) => {
+      const cells = matrix[i].map((val, j) => {
+        if (i === j) return `<td style="background:#f6f7f8"></td>`;
+        const intensity = val > 0 ? Math.round(val / maxVal * 255) : 255;
+        const r = 255;
+        const g = intensity;
+        const b = intensity;
+        const textColor = val > maxVal * 0.5 ? "#fff" : "#333";
+        const bg = val > 0 ? `rgb(${255 - Math.round(val/maxVal*180)},${Math.round(val/maxVal*80)},${Math.round(val/maxVal*40)})` : "#f6f7f8";
+        return `<td title="${esc(kw)} + ${esc(keywords[j])}: ${val}" style="background:${bg};color:${val>0?'#fff':'transparent'}">${val > 0 ? val : ""}</td>`;
+      }).join("");
+      return `<tr><th style="text-align:right;padding-right:4px">${esc(kw)}</th>${cells}</tr>`;
+    }).join("");
+
+    document.getElementById("corr-heatmap").innerHTML =
+      `<div class="heatmap-wrap"><table class="heatmap-table">${headerRow}${rows}</table></div>
+       <div style="font-size:.75rem;color:#aaa;margin-top:.5rem">Cell value = number of posts where both keywords appear together. Darker = stronger co-occurrence.</div>`;
   }
 
   let kwLoaded = false;

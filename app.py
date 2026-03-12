@@ -173,5 +173,75 @@ def api_keywords():
     return jsonify({"ok": True, "keywords": keywords, "source": source})
 
 
+@app.route("/api/correlation")
+def api_correlation():
+    category = request.args.get("category", "hot")
+    limit = int(request.args.get("limit", 50))
+    top_n = int(request.args.get("top", 20))
+    try:
+        posts = get_posts(category=category, limit=limit)
+        source = "live"
+    except Exception:
+        posts = MOCK_POSTS
+        source = "mock"
+
+    # Collect all words to find top keywords
+    all_words = []
+    for p in posts:
+        text = p.get("title", "") + " " + p.get("selftext", "")
+        tokens = re.findall(r"[a-z]{3,}", text.lower())
+        all_words.extend(t for t in tokens if t not in STOPWORDS)
+
+    top_keywords = [w for w, _ in Counter(all_words).most_common(top_n)]
+    kw_set = set(top_keywords)
+
+    # Per-post keyword presence
+    post_kw_sets = []
+    for p in posts:
+        text = p.get("title", "") + " " + p.get("selftext", "")
+        tokens = set(re.findall(r"[a-z]{3,}", text.lower()))
+        post_kw_sets.append(tokens & kw_set)
+
+    n = len(top_keywords)
+
+    # Co-occurrence matrix
+    matrix = [[0] * n for _ in range(n)]
+    for pkws in post_kw_sets:
+        idxs = [i for i, kw in enumerate(top_keywords) if kw in pkws]
+        for a in idxs:
+            for b in idxs:
+                if a != b:
+                    matrix[a][b] += 1
+
+    # Individual keyword counts (number of posts each appears in)
+    counts = [sum(1 for pkws in post_kw_sets if kw in pkws) for kw in top_keywords]
+
+    # Top pairs by Jaccard similarity
+    pairs = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            co = matrix[i][j]
+            if co == 0:
+                continue
+            union = counts[i] + counts[j] - co
+            jaccard = co / union if union > 0 else 0
+            pairs.append({
+                "word_a": top_keywords[i],
+                "word_b": top_keywords[j],
+                "co_count": co,
+                "jaccard": round(jaccard, 3),
+            })
+    pairs.sort(key=lambda x: x["jaccard"], reverse=True)
+
+    return jsonify({
+        "ok": True,
+        "keywords": top_keywords,
+        "matrix": matrix,
+        "counts": counts,
+        "pairs": pairs[:50],
+        "source": source,
+    })
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
