@@ -343,5 +343,89 @@ def api_correlation():
     })
 
 
+@app.route("/api/analyze", methods=["POST"])
+def api_analyze():
+    """Analyse posts sent from the browser (bypasses server-side IP blocking)."""
+    body = request.get_json(force=True, silent=True) or {}
+    posts = body.get("posts", [])
+    analysis_type = body.get("type", "symptoms")
+
+    if not posts:
+        return jsonify({"ok": False, "error": "no posts provided"}), 400
+
+    if analysis_type == "keywords":
+        top_n = int(body.get("top", 30))
+        keywords = extract_keywords(posts, top_n=top_n)
+        return jsonify({"ok": True, "keywords": keywords, "source": "live"})
+
+    elif analysis_type == "correlation":
+        top_n = int(body.get("top", 20))
+        all_words = []
+        for p in posts:
+            text = p.get("title", "") + " " + p.get("selftext", "")
+            tokens = re.findall(r"[a-z]{3,}", text.lower())
+            all_words.extend(t for t in tokens if t not in STOPWORDS)
+
+        top_keywords = [w for w, _ in Counter(all_words).most_common(top_n)]
+
+        freq_matrix = []
+        for p in posts:
+            text = p.get("title", "") + " " + p.get("selftext", "")
+            counts_p = Counter(re.findall(r"[a-z]{3,}", text.lower()))
+            freq_matrix.append([counts_p.get(kw, 0) for kw in top_keywords])
+
+        n = len(top_keywords)
+        corr = [[0.0] * n for _ in range(n)]
+        for i in range(n):
+            corr[i][i] = 1.0
+            col_i = [freq_matrix[r][i] for r in range(len(freq_matrix))]
+            for j in range(i + 1, n):
+                col_j = [freq_matrix[r][j] for r in range(len(freq_matrix))]
+                rv = round(_pearson(col_i, col_j), 3)
+                corr[i][j] = rv
+                corr[j][i] = rv
+
+        pairs = []
+        for i in range(n):
+            for j in range(i + 1, n):
+                rv = corr[i][j]
+                if rv != 0.0:
+                    pairs.append({"word_a": top_keywords[i], "word_b": top_keywords[j], "r": rv})
+        pairs.sort(key=lambda x: abs(x["r"]), reverse=True)
+
+        return jsonify({
+            "ok": True,
+            "keywords": top_keywords,
+            "matrix": corr,
+            "pairs": pairs[:50],
+            "source": "live",
+        })
+
+    else:  # symptoms
+        counts = {symptom: 0 for symptom in SYMPTOMS}
+        post_counts = {symptom: 0 for symptom in SYMPTOMS}
+
+        for p in posts:
+            text = (p.get("title", "") + " " + p.get("selftext", "")).lower()
+            for symptom, patterns in SYMPTOMS.items():
+                hits = sum(text.count(pat) for pat in patterns)
+                counts[symptom] += hits
+                if hits > 0:
+                    post_counts[symptom] += 1
+
+        results = [
+            {"symptom": s, "mentions": counts[s], "posts": post_counts[s]}
+            for s in SYMPTOMS if counts[s] > 0
+        ]
+        results.sort(key=lambda x: x["mentions"], reverse=True)
+
+        return jsonify({
+            "ok": True,
+            "symptoms": results,
+            "total_posts": len(posts),
+            "source": "live",
+        })
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

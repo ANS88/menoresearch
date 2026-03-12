@@ -474,28 +474,85 @@
 <script>
   let allPosts = [];
 
+  // ── Browser-side Reddit helpers ───────────────────────────
+  function parseChildren(children) {
+    return children.map(c => {
+      const d = c.data;
+      return {
+        title: d.title || "",
+        selftext: d.selftext || "",
+        score: d.score || 0,
+        num_comments: d.num_comments || 0,
+        url: `https://reddit.com${d.permalink}`,
+        author: d.author || "",
+        created_utc: d.created_utc || 0,
+        upvote_ratio: d.upvote_ratio || 0,
+        flair: d.link_flair_text || "",
+      };
+    });
+  }
+
+  async function fetchRedditDirect(category, limit) {
+    const res = await fetch(
+      `https://www.reddit.com/r/menopause/${category}.json?limit=${limit}&raw_json=1`
+    );
+    if (!res.ok) throw new Error(`Reddit returned ${res.status}`);
+    const data = await res.json();
+    return parseChildren(data.data.children);
+  }
+
+  async function fetchAllPostsBrowser(category, maxPages, onProgress) {
+    const posts = [];
+    let after = null;
+    for (let page = 0; page < maxPages; page++) {
+      let url = `https://www.reddit.com/r/menopause/${category}.json?limit=100&raw_json=1`;
+      if (after) url += `&after=${after}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Reddit returned ${res.status}`);
+      const data = await res.json();
+      const children = data.data.children;
+      if (!children.length) break;
+      posts.push(...parseChildren(children));
+      if (onProgress) onProgress(posts.length);
+      after = data.data.after;
+      if (!after) break;
+      if (page < maxPages - 1) await new Promise(r => setTimeout(r, 600));
+    }
+    return posts;
+  }
+
+  // ── Load posts ────────────────────────────────────────────
   async function loadPosts() {
     const category = document.getElementById("category").value;
     const limit = document.getElementById("limit").value;
     const btn = document.getElementById("loadBtn");
     btn.disabled = true;
+    kwLoaded = false; sympLoaded = false; corrLoaded = false;
 
     document.getElementById("error").style.display = "none";
     document.getElementById("posts").innerHTML = "";
-    kwLoaded = false;
     document.getElementById("status").innerHTML =
       `<div class="spinner"></div>Fetching posts from r/menopause…`;
 
     try {
-      const res = await fetch(`/api/posts?category=${category}&limit=${limit}`);
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error);
-      allPosts = data.posts;
-      document.getElementById("mock-banner").style.display =
-        data.source === "mock" ? "block" : "none";
+      // Try browser-side first — no cloud-IP blocking
+      const posts = await fetchRedditDirect(category, limit);
+      allPosts = posts;
+      document.getElementById("mock-banner").style.display = "none";
       renderPosts(allPosts);
-    } catch (e) {
-      showError(e.message);
+    } catch (_) {
+      // Fall back to server-side (may return mock data if Render is blocked)
+      try {
+        const res = await fetch(`/api/posts?category=${category}&limit=${limit}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+        allPosts = data.posts;
+        document.getElementById("mock-banner").style.display =
+          data.source === "mock" ? "block" : "none";
+        renderPosts(allPosts);
+      } catch (e) {
+        showError(e.message);
+      }
     } finally {
       btn.disabled = false;
       document.getElementById("status").innerHTML = "";
@@ -629,22 +686,48 @@
     if (sympLoaded) return;
 
     const category = document.getElementById("category").value;
-    const limit = document.getElementById("limit").value;
     document.getElementById("symp-bars").innerHTML =
-      `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+      `<div style="color:#aaa;font-size:.85rem">Fetching posts from Reddit… (0)</div>`;
+
     try {
-      const res = await fetch(`/api/symptoms?category=${category}`);
+      // Fetch up to 500 posts directly from user's browser
+      const posts = await fetchAllPostsBrowser(category, 5, (n) => {
+        document.getElementById("symp-bars").innerHTML =
+          `<div style="color:#aaa;font-size:.85rem">Fetching posts from Reddit… (${n})</div>`;
+      });
+
+      document.getElementById("symp-bars").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">Analysing ${posts.length} posts…</div>`;
+
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "symptoms", posts }),
+      });
       const data = await res.json();
-      if (!data.ok) throw new Error("failed");
-      document.getElementById("symp-source").textContent =
-        data.source === "mock" ? "(demo data)" : "(live data)";
+      if (!data.ok) throw new Error(data.error || "analysis failed");
+
+      document.getElementById("symp-source").textContent = `(live — ${data.total_posts} posts)`;
       document.getElementById("symp-meta").textContent =
         `Across ${data.total_posts} posts — showing total mentions and number of posts each symptom appears in.`;
       renderSymptoms(data.symptoms);
       sympLoaded = true;
     } catch (e) {
-      document.getElementById("symp-bars").innerHTML =
-        `<div style="color:#c0392b;font-size:.85rem">Failed to load symptoms.</div>`;
+      // Fall back to server-side
+      try {
+        const res = await fetch(`/api/symptoms?category=${category}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        document.getElementById("symp-source").textContent =
+          data.source === "mock" ? "(demo data)" : "(live data)";
+        document.getElementById("symp-meta").textContent =
+          `Across ${data.total_posts} posts — showing total mentions and number of posts each symptom appears in.`;
+        renderSymptoms(data.symptoms);
+        sympLoaded = true;
+      } catch (e2) {
+        document.getElementById("symp-bars").innerHTML =
+          `<div style="color:#c0392b;font-size:.85rem">Failed to load symptoms.</div>`;
+      }
     }
   }
 
@@ -686,22 +769,49 @@
     if (corrLoaded) return;
 
     const category = document.getElementById("category").value;
-    const limit = document.getElementById("limit").value;
     document.getElementById("corr-pairs").innerHTML =
       `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+
+    // Use already-loaded posts if available, otherwise fetch a page
+    let posts = allPosts.length ? allPosts : [];
+    if (!posts.length) {
+      try { posts = await fetchRedditDirect(category, 100); } catch (_) {}
+    }
+
     try {
-      const res = await fetch(`/api/correlation?category=${category}&limit=${limit}&top=20`);
-      const data = await res.json();
-      if (!data.ok) throw new Error("failed");
-      corrData = data;
-      document.getElementById("corr-source").textContent =
-        data.source === "mock" ? "(demo data)" : "(live data)";
-      renderCorrPairs(data.pairs);
-      renderHeatmap(data.keywords, data.matrix);
-      corrLoaded = true;
-    } catch (e) {
-      document.getElementById("corr-pairs").innerHTML =
-        `<div style="color:#c0392b;font-size:.85rem">Failed to load correlation data.</div>`;
+      if (posts.length) {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "correlation", posts, top: 20 }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        corrData = data;
+        document.getElementById("corr-source").textContent = "(live data)";
+        renderCorrPairs(data.pairs);
+        renderHeatmap(data.keywords, data.matrix);
+        corrLoaded = true;
+      } else {
+        throw new Error("no posts");
+      }
+    } catch (_) {
+      // Fall back to server-side
+      try {
+        const limit = document.getElementById("limit").value;
+        const res = await fetch(`/api/correlation?category=${category}&limit=${limit}&top=20`);
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        corrData = data;
+        document.getElementById("corr-source").textContent =
+          data.source === "mock" ? "(demo data)" : "(live data)";
+        renderCorrPairs(data.pairs);
+        renderHeatmap(data.keywords, data.matrix);
+        corrLoaded = true;
+      } catch (e) {
+        document.getElementById("corr-pairs").innerHTML =
+          `<div style="color:#c0392b;font-size:.85rem">Failed to load correlation data.</div>`;
+      }
     }
   }
 
@@ -785,19 +895,44 @@
     section.classList.add("open");
     btn.textContent = "Hide Keywords";
     if (kwLoaded) return;
+
     const category = document.getElementById("category").value;
-    const limit = document.getElementById("limit").value;
     document.getElementById("kw-bars").innerHTML =
       `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+
+    // Use already-loaded posts if available
+    let posts = allPosts.length ? allPosts : [];
+    if (!posts.length) {
+      try { posts = await fetchRedditDirect(category, 100); } catch (_) {}
+    }
+
     try {
-      const res = await fetch(`/api/keywords?category=${category}&limit=${limit}&top=30`);
-      const data = await res.json();
-      if (!data.ok) throw new Error("failed");
-      renderKeywords(data.keywords, data.source);
-      kwLoaded = true;
-    } catch (e) {
-      document.getElementById("kw-bars").innerHTML =
-        `<div style="color:#c0392b;font-size:.85rem">Failed to load keywords.</div>`;
+      if (posts.length) {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "keywords", posts, top: 30 }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        renderKeywords(data.keywords, "live");
+        kwLoaded = true;
+      } else {
+        throw new Error("no posts");
+      }
+    } catch (_) {
+      // Fall back to server-side
+      try {
+        const limit = document.getElementById("limit").value;
+        const res = await fetch(`/api/keywords?category=${category}&limit=${limit}&top=30`);
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        renderKeywords(data.keywords, data.source);
+        kwLoaded = true;
+      } catch (e) {
+        document.getElementById("kw-bars").innerHTML =
+          `<div style="color:#c0392b;font-size:.85rem">Failed to load keywords.</div>`;
+      }
     }
   }
 
