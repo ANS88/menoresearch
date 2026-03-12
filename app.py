@@ -1,7 +1,7 @@
 import re
 from collections import Counter
 from flask import Flask, jsonify, render_template, request
-from menopause_reddit import get_posts, get_comments
+from menopause_reddit import get_posts, get_comments, fetch
 
 app = Flask(__name__)
 
