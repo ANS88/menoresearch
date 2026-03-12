@@ -212,7 +212,7 @@ def api_keywords():
 @app.route("/api/symptoms")
 def api_symptoms():
     category = request.args.get("category", "hot")
-    max_pages = int(request.args.get("pages", 10))
+    max_pages = int(request.args.get("pages", 5))
     try:
         posts = get_all_posts(category=category, max_pages=max_pages)
         source = "live"
