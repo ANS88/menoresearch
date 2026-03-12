@@ -1098,33 +1098,30 @@
     if (analyticsLoaded) return;
 
     const el = document.getElementById("analytics-content");
-    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching recent posts… (0)</div>`;
 
-    let posts = [];
-    try {
-      // Best case: paginate through "new" for accurate time distribution
-      posts = await fetchAllPostsBrowser("new", 5, (n) => {
-        el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching recent posts… (${n})</div>`;
-      });
-    } catch (_) {
-      // Fallback 1: use already-loaded posts
-      if (allPosts.length) {
-        posts = allPosts;
-      } else {
-        // Fallback 2: single-page fetch
-        try { posts = await fetchRedditDirect("new", 100); } catch (_2) {}
-      }
+    // Use already-loaded posts first (instant, no Reddit request needed)
+    let posts = allPosts.slice();
+
+    if (!posts.length) {
+      // No posts loaded yet — fetch a single page
+      el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching posts…</div>`;
+      try {
+        posts = await fetchRedditDirect("new", 100);
+      } catch (_) {}
     }
 
     if (!posts.length) {
-      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not load posts. Try loading posts first then retry.</div>`;
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">No posts available. Click "Load Posts" first, then try again.</div>`;
       return;
     }
 
-    document.getElementById("analytics-source").textContent =
-      `(${posts.length} posts)`;
-    renderAnalytics(posts);
-    analyticsLoaded = true;
+    document.getElementById("analytics-source").textContent = `(${posts.length} posts)`;
+    try {
+      renderAnalytics(posts);
+      analyticsLoaded = true;
+    } catch (err) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Render error: ${err.message}</div>`;
+    }
   }
 
   function renderAnalytics(posts) {
