@@ -1115,12 +1115,14 @@
       return;
     }
 
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Computing analytics for ${posts.length} posts…</div>`;
     document.getElementById("analytics-source").textContent = `(${posts.length} posts)`;
     try {
       renderAnalytics(posts);
       analyticsLoaded = true;
     } catch (err) {
       el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Render error: ${err.message}</div>`;
+      console.error("Analytics error:", err);
     }
   }
 
