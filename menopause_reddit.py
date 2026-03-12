@@ -50,12 +50,9 @@ def fetch(url):
         return json.loads(r.read())
 
 
-def get_posts(subreddit="menopause", category="hot", limit=25):
-    url = f"https://www.reddit.com/r/{subreddit}/{category}.json?limit={limit}"
-    data = fetch(url)
-    posts = data["data"]["children"]
+def _parse_posts(children):
     results = []
-    for p in posts:
+    for p in children:
         d = p["data"]
         results.append({
             "title": d["title"],
@@ -68,6 +65,32 @@ def get_posts(subreddit="menopause", category="hot", limit=25):
             "flair": d.get("link_flair_text", ""),
             "selftext": d.get("selftext", ""),
         })
+    return results
+
+
+def get_posts(subreddit="menopause", category="hot", limit=25):
+    url = f"https://www.reddit.com/r/{subreddit}/{category}.json?limit={min(limit, 100)}"
+    data = fetch(url)
+    return _parse_posts(data["data"]["children"])[:limit]
+
+
+def get_all_posts(subreddit="menopause", category="hot", max_pages=10):
+    """Paginate through up to max_pages * 100 posts."""
+    results = []
+    after = None
+    for _ in range(max_pages):
+        url = f"https://www.reddit.com/r/{subreddit}/{category}.json?limit=100"
+        if after:
+            url += f"&after={after}"
+        data = fetch(url)
+        page = data["data"]["children"]
+        if not page:
+            break
+        results.extend(_parse_posts(page))
+        after = data["data"].get("after")
+        if not after:
+            break
+        time.sleep(0.6)  # stay within Reddit's rate limit
     return results
 
 

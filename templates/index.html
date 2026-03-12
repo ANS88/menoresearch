@@ -633,7 +633,7 @@
     document.getElementById("symp-bars").innerHTML =
       `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
     try {
-      const res = await fetch(`/api/symptoms?category=${category}&limit=${limit}`);
+      const res = await fetch(`/api/symptoms?category=${category}`);
       const data = await res.json();
       if (!data.ok) throw new Error("failed");
       document.getElementById("symp-source").textContent =

@@ -1,7 +1,7 @@
 import re
 from collections import Counter
 from flask import Flask, jsonify, render_template, request
-from menopause_reddit import get_posts, get_comments, fetch
+from menopause_reddit import get_posts, get_all_posts, get_comments, fetch
 
 app = Flask(__name__)
 
@@ -212,9 +212,9 @@ def api_keywords():
 @app.route("/api/symptoms")
 def api_symptoms():
     category = request.args.get("category", "hot")
-    limit = int(request.args.get("limit", 50))
+    max_pages = int(request.args.get("pages", 10))
     try:
-        posts = get_posts(category=category, limit=limit)
+        posts = get_all_posts(category=category, max_pages=max_pages)
         source = "live"
     except Exception:
         posts = MOCK_POSTS
