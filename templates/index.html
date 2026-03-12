@@ -428,8 +428,17 @@
   <input type="number" id="limit" value="25" min="1" max="100" style="width:64px" />
 
   <button id="loadBtn" onclick="loadPosts()">Load Posts</button>
+  <button id="sympBtn" onclick="toggleSymptoms()">Show Symptoms</button>
   <button id="kwBtn" onclick="toggleKeywords()">Show Keywords</button>
   <button id="corrBtn" onclick="toggleCorrelation()">Show Correlation</button>
+</div>
+
+<div id="symp-section" style="max-width:860px;margin:0 auto .8rem;padding:0 1rem;display:none">
+  <div class="kw-panel">
+    <h2>Most Discussed Symptoms <span id="symp-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <p id="symp-meta" style="font-size:.78rem;color:#888;margin-bottom:.8rem"></p>
+    <div id="symp-bars"></div>
+  </div>
 </div>
 
 <div id="corr-section">
@@ -602,6 +611,61 @@
     } catch (e) {
       panel.innerHTML = `<div class="no-comments" style="color:#c0392b">Failed to load comments: ${esc(e.message)}</div>`;
     }
+  }
+
+  // ── Symptoms ─────────────────────────────────────────────
+  let sympLoaded = false;
+
+  async function toggleSymptoms() {
+    const section = document.getElementById("symp-section");
+    const btn = document.getElementById("sympBtn");
+    if (section.style.display !== "none") {
+      section.style.display = "none";
+      btn.textContent = "Show Symptoms";
+      return;
+    }
+    section.style.display = "block";
+    btn.textContent = "Hide Symptoms";
+    if (sympLoaded) return;
+
+    const category = document.getElementById("category").value;
+    const limit = document.getElementById("limit").value;
+    document.getElementById("symp-bars").innerHTML =
+      `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+    try {
+      const res = await fetch(`/api/symptoms?category=${category}&limit=${limit}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error("failed");
+      document.getElementById("symp-source").textContent =
+        data.source === "mock" ? "(demo data)" : "(live data)";
+      document.getElementById("symp-meta").textContent =
+        `Across ${data.total_posts} posts — showing total mentions and number of posts each symptom appears in.`;
+      renderSymptoms(data.symptoms);
+      sympLoaded = true;
+    } catch (e) {
+      document.getElementById("symp-bars").innerHTML =
+        `<div style="color:#c0392b;font-size:.85rem">Failed to load symptoms.</div>`;
+    }
+  }
+
+  function renderSymptoms(symptoms) {
+    if (!symptoms.length) {
+      document.getElementById("symp-bars").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">No symptoms detected.</div>`;
+      return;
+    }
+    const maxMentions = symptoms[0].mentions;
+    document.getElementById("symp-bars").innerHTML = symptoms.map(s => `
+      <div class="kw-bar-row">
+        <span class="kw-label">${esc(s.symptom)}</span>
+        <div class="kw-bar-wrap">
+          <div class="kw-bar" style="width:${Math.round(s.mentions / maxMentions * 100)}%"></div>
+        </div>
+        <span class="kw-count" style="min-width:80px">
+          ${s.mentions} mention${s.mentions !== 1 ? "s" : ""}
+          <span style="color:#bbb;font-size:.68rem">(${s.posts} post${s.posts !== 1 ? "s" : ""})</span>
+        </span>
+      </div>`).join("");
   }
 
   // ── Correlation ──────────────────────────────────────────

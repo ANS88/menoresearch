@@ -135,6 +135,42 @@ def api_comments():
         return jsonify({"ok": True, "comments": comments, "source": "mock", "warning": str(e)})
 
 
+SYMPTOMS = {
+    "hot flashes":        ["hot flash", "hot flashes", "hot flush", "hot flushes"],
+    "night sweats":       ["night sweat", "night sweats"],
+    "brain fog":          ["brain fog", "brain fogg", "foggy brain", "mental fog"],
+    "insomnia":           ["insomnia", "can't sleep", "cannot sleep", "trouble sleeping",
+                           "sleep problem", "sleep issues", "sleep disturbance", "not sleeping"],
+    "anxiety":            ["anxiety", "anxious", "panic attack", "panic attacks"],
+    "depression":         ["depression", "depressed", "low mood"],
+    "mood swings":        ["mood swing", "mood swings", "mood change", "mood changes",
+                           "irritab", "irritability"],
+    "fatigue":            ["fatigue", "exhaustion", "exhausted", "tired all the time",
+                           "chronic fatigue", "low energy"],
+    "joint pain":         ["joint pain", "joint ache", "achy joints", "joint inflammation",
+                           "joint stiffness", "arthritis"],
+    "vaginal dryness":    ["vaginal dryness", "vaginal atrophy", "dryness", "painful sex",
+                           "dyspareunia"],
+    "irregular periods":  ["irregular period", "irregular cycle", "missed period",
+                           "skipped period", "heavy period", "heavy bleeding", "spotting"],
+    "weight gain":        ["weight gain", "gaining weight", "gained weight", "belly fat",
+                           "abdominal weight", "metabolism"],
+    "heart palpitations": ["heart palpitation", "heart palpitations", "palpitation",
+                           "racing heart", "heart racing", "irregular heartbeat"],
+    "headaches":          ["headache", "headaches", "migraine", "migraines"],
+    "memory loss":        ["memory loss", "memory problem", "forgetful", "forgetting words",
+                           "word recall", "cognitive"],
+    "low libido":         ["low libido", "loss of libido", "low sex drive", "no sex drive",
+                           "loss of interest in sex"],
+    "skin changes":       ["skin change", "dry skin", "itchy skin", "skin itch", "crawling skin",
+                           "formication"],
+    "hair loss":          ["hair loss", "hair thinning", "losing hair", "thinning hair"],
+    "bloating":           ["bloating", "bloated", "digestive", "gut issue"],
+    "urinary issues":     ["urinary", "bladder", "incontinence", "uti", "frequent urination",
+                           "overactive bladder"],
+}
+
+
 STOPWORDS = {
     "i", "me", "my", "we", "our", "you", "your", "he", "she", "they", "it",
     "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
@@ -171,6 +207,37 @@ def api_keywords():
         source = "mock"
     keywords = extract_keywords(posts, top_n=top_n)
     return jsonify({"ok": True, "keywords": keywords, "source": source})
+
+
+@app.route("/api/symptoms")
+def api_symptoms():
+    category = request.args.get("category", "hot")
+    limit = int(request.args.get("limit", 50))
+    try:
+        posts = get_posts(category=category, limit=limit)
+        source = "live"
+    except Exception:
+        posts = MOCK_POSTS
+        source = "mock"
+
+    counts = {symptom: 0 for symptom in SYMPTOMS}
+    post_counts = {symptom: 0 for symptom in SYMPTOMS}  # posts mentioning it at least once
+
+    for p in posts:
+        text = (p.get("title", "") + " " + p.get("selftext", "")).lower()
+        for symptom, patterns in SYMPTOMS.items():
+            hits = sum(text.count(pat) for pat in patterns)
+            counts[symptom] += hits
+            if hits > 0:
+                post_counts[symptom] += 1
+
+    results = [
+        {"symptom": s, "mentions": counts[s], "posts": post_counts[s]}
+        for s in SYMPTOMS if counts[s] > 0
+    ]
+    results.sort(key=lambda x: x["mentions"], reverse=True)
+
+    return jsonify({"ok": True, "symptoms": results, "total_posts": len(posts), "source": source})
 
 
 @app.route("/api/stats")
