@@ -173,6 +173,21 @@ def api_keywords():
     return jsonify({"ok": True, "keywords": keywords, "source": source})
 
 
+def _pearson(x, y):
+    """Pearson r between two equal-length lists. Returns 0 if constant."""
+    n = len(x)
+    if n < 2:
+        return 0.0
+    mx = sum(x) / n
+    my = sum(y) / n
+    num = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y))
+    dx = sum((xi - mx) ** 2 for xi in x) ** 0.5
+    dy = sum((yi - my) ** 2 for yi in y) ** 0.5
+    if dx == 0 or dy == 0:
+        return 0.0
+    return num / (dx * dy)
+
+
 @app.route("/api/correlation")
 def api_correlation():
     category = request.args.get("category", "hot")
@@ -193,51 +208,44 @@ def api_correlation():
         all_words.extend(t for t in tokens if t not in STOPWORDS)
 
     top_keywords = [w for w, _ in Counter(all_words).most_common(top_n)]
-    kw_set = set(top_keywords)
 
-    # Per-post keyword presence
-    post_kw_sets = []
+    # Build per-post frequency vectors (one count per keyword per post)
+    freq_matrix = []  # shape: [num_posts][num_keywords]
     for p in posts:
         text = p.get("title", "") + " " + p.get("selftext", "")
-        tokens = set(re.findall(r"[a-z]{3,}", text.lower()))
-        post_kw_sets.append(tokens & kw_set)
+        counts_p = Counter(re.findall(r"[a-z]{3,}", text.lower()))
+        freq_matrix.append([counts_p.get(kw, 0) for kw in top_keywords])
 
     n = len(top_keywords)
 
-    # Co-occurrence matrix
-    matrix = [[0] * n for _ in range(n)]
-    for pkws in post_kw_sets:
-        idxs = [i for i, kw in enumerate(top_keywords) if kw in pkws]
-        for a in idxs:
-            for b in idxs:
-                if a != b:
-                    matrix[a][b] += 1
+    # Pearson correlation matrix between keyword frequency vectors
+    corr = [[0.0] * n for _ in range(n)]
+    for i in range(n):
+        corr[i][i] = 1.0
+        col_i = [freq_matrix[r][i] for r in range(len(freq_matrix))]
+        for j in range(i + 1, n):
+            col_j = [freq_matrix[r][j] for r in range(len(freq_matrix))]
+            r = round(_pearson(col_i, col_j), 3)
+            corr[i][j] = r
+            corr[j][i] = r
 
-    # Individual keyword counts (number of posts each appears in)
-    counts = [sum(1 for pkws in post_kw_sets if kw in pkws) for kw in top_keywords]
-
-    # Top pairs by Jaccard similarity
+    # Sorted pairs by absolute Pearson r (strongest first)
     pairs = []
     for i in range(n):
         for j in range(i + 1, n):
-            co = matrix[i][j]
-            if co == 0:
-                continue
-            union = counts[i] + counts[j] - co
-            jaccard = co / union if union > 0 else 0
-            pairs.append({
-                "word_a": top_keywords[i],
-                "word_b": top_keywords[j],
-                "co_count": co,
-                "jaccard": round(jaccard, 3),
-            })
-    pairs.sort(key=lambda x: x["jaccard"], reverse=True)
+            r = corr[i][j]
+            if r != 0.0:
+                pairs.append({
+                    "word_a": top_keywords[i],
+                    "word_b": top_keywords[j],
+                    "r": r,
+                })
+    pairs.sort(key=lambda x: abs(x["r"]), reverse=True)
 
     return jsonify({
         "ok": True,
         "keywords": top_keywords,
-        "matrix": matrix,
-        "counts": counts,
+        "matrix": corr,
         "pairs": pairs[:50],
         "source": source,
     })

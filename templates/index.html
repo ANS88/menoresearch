@@ -634,46 +634,58 @@
   function renderCorrPairs(pairs) {
     if (!pairs.length) {
       document.getElementById("corr-pairs").innerHTML =
-        `<div style="color:#aaa;font-size:.85rem">No co-occurring keyword pairs found.</div>`;
+        `<div style="color:#aaa;font-size:.85rem">No correlated keyword pairs found.</div>`;
       return;
     }
-    const max = pairs[0].jaccard;
-    document.getElementById("corr-pairs").innerHTML = pairs.slice(0, 30).map(p => `
+    const maxAbs = Math.abs(pairs[0].r);
+    document.getElementById("corr-pairs").innerHTML = pairs.slice(0, 30).map(p => {
+      const pct = Math.round(Math.abs(p.r) / maxAbs * 100);
+      const barColor = p.r >= 0 ? "#6c63ff" : "#ff4500";
+      const sign = p.r >= 0 ? "+" : "";
+      return `
       <div class="pair-row">
         <span class="pair-words">${esc(p.word_a)} &amp; ${esc(p.word_b)}</span>
         <div class="pair-bar-wrap">
-          <div class="pair-bar" style="width:${Math.round(p.jaccard / max * 100)}%"></div>
+          <div class="pair-bar" style="width:${pct}%;background:${barColor}"></div>
         </div>
-        <span class="pair-score">${p.jaccard.toFixed(2)} <span style="font-size:.65rem;color:#bbb">(${p.co_count})</span></span>
-      </div>`).join("");
+        <span class="pair-score" style="color:${barColor}">${sign}${p.r.toFixed(3)}</span>
+      </div>`;
+    }).join("");
   }
 
   function renderHeatmap(keywords, matrix) {
     const n = keywords.length;
-    const maxVal = Math.max(...matrix.flat().filter(v => v > 0), 1);
+    // diverging scale: blue for positive r, red for negative r
+    function cellStyle(r, kw, kwj) {
+      if (r === 1.0) return `style="background:#e8e8ff" title="${esc(kw)}"`;
+      const abs = Math.abs(r);
+      const intensity = Math.round(abs * 200);
+      const bg = r > 0
+        ? `rgb(${255-intensity},${255-intensity},255)`
+        : `rgb(255,${255-intensity},${255-intensity})`;
+      const textColor = abs > 0.5 ? (r > 0 ? "#3333cc" : "#cc0000") : "#555";
+      return `style="background:${bg};color:${textColor}" title="${esc(kw)} & ${esc(kwj)}: r=${r.toFixed(3)}"`;
+    }
 
     const headerRow = `<tr>
       <th></th>
-      ${keywords.map((_, i) => `<th style="transform:rotate(-55deg);transform-origin:bottom left;height:70px;vertical-align:bottom;padding-bottom:2px">${esc(keywords[i])}</th>`).join("")}
+      ${keywords.map(kw => `<th style="transform:rotate(-55deg);transform-origin:bottom left;height:70px;vertical-align:bottom;padding-bottom:2px">${esc(kw)}</th>`).join("")}
     </tr>`;
 
     const rows = keywords.map((kw, i) => {
-      const cells = matrix[i].map((val, j) => {
-        if (i === j) return `<td style="background:#f6f7f8"></td>`;
-        const intensity = val > 0 ? Math.round(val / maxVal * 255) : 255;
-        const r = 255;
-        const g = intensity;
-        const b = intensity;
-        const textColor = val > maxVal * 0.5 ? "#fff" : "#333";
-        const bg = val > 0 ? `rgb(${255 - Math.round(val/maxVal*180)},${Math.round(val/maxVal*80)},${Math.round(val/maxVal*40)})` : "#f6f7f8";
-        return `<td title="${esc(kw)} + ${esc(keywords[j])}: ${val}" style="background:${bg};color:${val>0?'#fff':'transparent'}">${val > 0 ? val : ""}</td>`;
-      }).join("");
+      const cells = matrix[i].map((val, j) =>
+        `<td ${cellStyle(val, kw, keywords[j])}>${i !== j && val !== 0 ? val.toFixed(2) : ""}</td>`
+      ).join("");
       return `<tr><th style="text-align:right;padding-right:4px">${esc(kw)}</th>${cells}</tr>`;
     }).join("");
 
     document.getElementById("corr-heatmap").innerHTML =
       `<div class="heatmap-wrap"><table class="heatmap-table">${headerRow}${rows}</table></div>
-       <div style="font-size:.75rem;color:#aaa;margin-top:.5rem">Cell value = number of posts where both keywords appear together. Darker = stronger co-occurrence.</div>`;
+       <div style="font-size:.75rem;color:#aaa;margin-top:.5rem">
+         Pearson r between keyword frequency vectors across posts.
+         <span style="color:#3333cc">Blue = positive</span> &nbsp;
+         <span style="color:#cc0000">Red = negative</span> correlation.
+       </div>`;
   }
 
   let kwLoaded = false;
