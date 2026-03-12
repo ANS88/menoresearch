@@ -1,3 +1,5 @@
+import re
+from collections import Counter
 from flask import Flask, jsonify, render_template, request
 from menopause_reddit import get_posts, get_comments
 
@@ -131,6 +133,44 @@ def api_comments():
         ])
         comments = [{"author": "redditor", "body": c, "score": 0} for c in raw]
         return jsonify({"ok": True, "comments": comments, "source": "mock", "warning": str(e)})
+
+
+STOPWORDS = {
+    "i", "me", "my", "we", "our", "you", "your", "he", "she", "they", "it",
+    "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+    "of", "with", "is", "was", "are", "were", "be", "been", "being", "have",
+    "has", "had", "do", "does", "did", "will", "would", "could", "should",
+    "not", "no", "so", "if", "just", "like", "that", "this", "what", "how",
+    "from", "about", "up", "out", "get", "got", "can", "all", "more", "also",
+    "than", "then", "when", "there", "their", "them", "who", "which", "after",
+    "before", "been", "its", "any", "some", "as", "well", "one", "know",
+    "think", "really", "ve", "ll", "re", "m", "s", "t", "d", "amp",
+}
+
+
+def extract_keywords(posts, top_n=30):
+    words = []
+    for p in posts:
+        text = p.get("title", "") + " " + p.get("selftext", "")
+        tokens = re.findall(r"[a-z]{3,}", text.lower())
+        words.extend(t for t in tokens if t not in STOPWORDS)
+    counts = Counter(words)
+    return [{"word": w, "count": c} for w, c in counts.most_common(top_n)]
+
+
+@app.route("/api/keywords")
+def api_keywords():
+    category = request.args.get("category", "hot")
+    limit = int(request.args.get("limit", 50))
+    top_n = int(request.args.get("top", 30))
+    try:
+        posts = get_posts(category=category, limit=limit)
+        source = "live"
+    except Exception:
+        posts = MOCK_POSTS
+        source = "mock"
+    keywords = extract_keywords(posts, top_n=top_n)
+    return jsonify({"ok": True, "keywords": keywords, "source": source})
 
 
 if __name__ == "__main__":

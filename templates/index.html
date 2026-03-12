@@ -217,6 +217,58 @@
 
     .no-comments { font-size: .82rem; color: #aaa; padding: .5rem 0; }
 
+    /* ── Keywords panel ── */
+    #keywords-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #keywords-section.open { display: block; }
+    .kw-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1rem 1.2rem;
+    }
+    .kw-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .8rem;
+      color: #333;
+    }
+    .kw-bar-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .35rem;
+    }
+    .kw-label {
+      min-width: 130px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: #333;
+      text-align: right;
+    }
+    .kw-bar-wrap {
+      flex: 1;
+      background: #f0f0f0;
+      border-radius: 4px;
+      height: 18px;
+      overflow: hidden;
+    }
+    .kw-bar {
+      height: 100%;
+      background: #ff4500;
+      border-radius: 4px;
+      transition: width .4s ease;
+    }
+    .kw-count {
+      font-size: .78rem;
+      color: #888;
+      min-width: 28px;
+    }
+
     /* mock banner */
     .mock-banner {
       background: #fff8e1;
@@ -264,6 +316,14 @@
   <input type="number" id="limit" value="25" min="1" max="100" style="width:64px" />
 
   <button id="loadBtn" onclick="loadPosts()">Load Posts</button>
+  <button id="kwBtn" onclick="toggleKeywords()">Show Keywords</button>
+</div>
+
+<div id="keywords-section">
+  <div class="kw-panel">
+    <h2>Top Keywords <span id="kw-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div id="kw-bars"></div>
+  </div>
 </div>
 
 <div class="search-wrap">
@@ -288,6 +348,7 @@
 
     document.getElementById("error").style.display = "none";
     document.getElementById("posts").innerHTML = "";
+    kwLoaded = false;
     document.getElementById("status").innerHTML =
       `<div class="spinner"></div>Fetching posts from r/menopause…`;
 
@@ -416,6 +477,55 @@
     } catch (e) {
       panel.innerHTML = `<div class="no-comments" style="color:#c0392b">Failed to load comments: ${esc(e.message)}</div>`;
     }
+  }
+
+  let kwLoaded = false;
+
+  async function toggleKeywords() {
+    const section = document.getElementById("keywords-section");
+    const btn = document.getElementById("kwBtn");
+    const isOpen = section.classList.contains("open");
+    if (isOpen) {
+      section.classList.remove("open");
+      btn.textContent = "Show Keywords";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Keywords";
+    if (kwLoaded) return;
+    const category = document.getElementById("category").value;
+    const limit = document.getElementById("limit").value;
+    document.getElementById("kw-bars").innerHTML =
+      `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+    try {
+      const res = await fetch(`/api/keywords?category=${category}&limit=${limit}&top=30`);
+      const data = await res.json();
+      if (!data.ok) throw new Error("failed");
+      renderKeywords(data.keywords, data.source);
+      kwLoaded = true;
+    } catch (e) {
+      document.getElementById("kw-bars").innerHTML =
+        `<div style="color:#c0392b;font-size:.85rem">Failed to load keywords.</div>`;
+    }
+  }
+
+  function renderKeywords(keywords, source) {
+    document.getElementById("kw-source").textContent =
+      source === "mock" ? "(demo data)" : "(live data)";
+    if (!keywords.length) {
+      document.getElementById("kw-bars").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">No keywords found.</div>`;
+      return;
+    }
+    const max = keywords[0].count;
+    document.getElementById("kw-bars").innerHTML = keywords.map(k => `
+      <div class="kw-bar-row">
+        <span class="kw-label">${esc(k.word)}</span>
+        <div class="kw-bar-wrap">
+          <div class="kw-bar" style="width:${Math.round(k.count / max * 100)}%"></div>
+        </div>
+        <span class="kw-count">${k.count}</span>
+      </div>`).join("");
   }
 
   function showError(msg) {
