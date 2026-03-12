@@ -643,7 +643,7 @@
       if (onProgress) onProgress(posts.length);
       after = data.data.after;
       if (!after) break;
-      if (page < maxPages - 1) await new Promise(r => setTimeout(r, 600));
+      if (page < maxPages - 1) await new Promise(r => setTimeout(r, 1000));
     }
     return posts;
   }
@@ -1100,18 +1100,31 @@
     const el = document.getElementById("analytics-content");
     el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching recent posts… (0)</div>`;
 
+    let posts = [];
     try {
-      // Fetch recent posts sorted by "new" so we get accurate weekly counts
-      const posts = await fetchAllPostsBrowser("new", 5, (n) => {
+      // Best case: paginate through "new" for accurate time distribution
+      posts = await fetchAllPostsBrowser("new", 5, (n) => {
         el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching recent posts… (${n})</div>`;
       });
-      document.getElementById("analytics-source").textContent =
-        `(${posts.length} posts, sorted by new)`;
-      renderAnalytics(posts);
-      analyticsLoaded = true;
-    } catch (e) {
-      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Failed to load analytics.</div>`;
+    } catch (_) {
+      // Fallback 1: use already-loaded posts
+      if (allPosts.length) {
+        posts = allPosts;
+      } else {
+        // Fallback 2: single-page fetch
+        try { posts = await fetchRedditDirect("new", 100); } catch (_2) {}
+      }
     }
+
+    if (!posts.length) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not load posts. Try loading posts first then retry.</div>`;
+      return;
+    }
+
+    document.getElementById("analytics-source").textContent =
+      `(${posts.length} posts)`;
+    renderAnalytics(posts);
+    analyticsLoaded = true;
   }
 
   function renderAnalytics(posts) {
