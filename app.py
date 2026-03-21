@@ -377,16 +377,19 @@ def api_categorize():
     results = []
     for cat in POST_CATEGORIES:
         matched = []
+        total_hits = 0
         for p in posts:
             text = (p.get("title", "") + " " + p.get("selftext", "")).lower()
             hits = sum(text.count(pat) for pat in cat["patterns"])
             if hits > 0:
                 matched.append((hits, p))
+                total_hits += hits
         matched.sort(key=lambda x: (x[0], x[1].get("score", 0)), reverse=True)
         results.append({
             "id": cat["id"],
             "label": cat["label"],
             "count": len(matched),
+            "total_hits": total_hits,
             "posts": [p for _, p in matched[:25]],
         })
 

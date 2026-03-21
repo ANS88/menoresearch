@@ -1557,6 +1557,9 @@
     }
     el.innerHTML = categories.map(cat => {
       const countCls = cat.count === 0 ? "cat-count zero" : "cat-count";
+      const hitsLabel = cat.total_hits
+        ? `<span style="font-size:.72rem;color:#aaa;margin-left:.3rem">${cat.total_hits.toLocaleString()} hits</span>`
+        : "";
       const rows = cat.posts.map(p => {
         const score = fmtScore(p.score || 0);
         return `<div class="cat-post-row">
@@ -1570,7 +1573,8 @@
       return `<div class="cat-group">
         <div class="cat-header" onclick="toggleCatGroup('${esc(cat.id)}')">
           <span class="cat-label">${esc(cat.label)}</span>
-          <span class="${countCls}">${cat.count}</span>
+          ${hitsLabel}
+          <span class="${countCls}">${cat.count} posts</span>
           <span class="cat-chevron" id="chev-${esc(cat.id)}">▼</span>
         </div>
         <div class="cat-posts" id="catposts-${esc(cat.id)}" style="display:none">
