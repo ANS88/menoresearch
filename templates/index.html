@@ -571,6 +571,44 @@
       white-space: nowrap;
     }
     .cat-count.zero { background: #ddd; color: #aaa; }
+    .coo-table {
+      border-collapse: collapse;
+      font-size: .7rem;
+    }
+    .coo-table th, .coo-table td {
+      width: 44px;
+      min-width: 44px;
+      height: 34px;
+      text-align: center;
+      padding: 2px 3px;
+      border: 1px solid #111;
+    }
+    .coo-table thead th {
+      background: #111;
+      color: #999;
+      font-weight: 500;
+      font-size: .65rem;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      max-width: 44px;
+      overflow: hidden;
+      white-space: nowrap;
+      height: 90px;
+      vertical-align: bottom;
+    }
+    .coo-table thead th:first-child { writing-mode: horizontal-tb; transform: none; height: auto; }
+    .coo-table tbody th {
+      background: #111;
+      color: #999;
+      font-weight: 500;
+      font-size: .65rem;
+      text-align: right;
+      padding-right: 6px;
+      white-space: nowrap;
+      width: auto;
+      min-width: 90px;
+    }
     .cat-chevron {
       font-size: .75rem;
       color: #bbb;
@@ -776,6 +814,13 @@
     <div class="categories-subtitle">All-time top posts grouped by topic. A post may appear in multiple categories.</div>
     <div id="categories-content">
       <div style="color:#aaa;font-size:.85rem">Loading…</div>
+    </div>
+    <div id="cooccurrence-section" style="display:none;margin-top:2rem">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:.4rem;color:#e0e0e0">
+        Topic Co-occurrence
+        <span style="font-size:.75rem;font-weight:400;color:#aaa;margin-left:.5rem">how often topics appear in the same post</span>
+      </h3>
+      <div id="cooccurrence-content"></div>
     </div>
   </div>
 </div>
@@ -1521,16 +1566,25 @@
     el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Classifying ${posts.length} posts…</div>`;
 
     try {
-      const res = await fetch("/api/categorize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ posts }),
-      });
-      const data = await res.json();
+      const [catRes, cooRes] = await Promise.all([
+        fetch("/api/categorize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ posts }),
+        }),
+        fetch("/api/cooccurrence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ posts }),
+        }),
+      ]);
+      const data = await catRes.json();
       if (!data.ok) throw new Error(data.error || "failed");
       document.getElementById("categories-source").textContent =
         `(${posts.length} all-time top posts)`;
       renderCategories(data.categories);
+      const cooData = await cooRes.json();
+      if (cooData.ok) renderCooccurrence(cooData);
       categoriesLoaded = true;
     } catch (e) {
       el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Classification failed: ${esc(e.message)}</div>`;
@@ -1583,6 +1637,48 @@
         </div>
       </div>`;
     }).join("");
+  }
+
+  function renderCooccurrence({ labels, matrix }) {
+    const n = labels.length;
+    // short labels for axis
+    const short = labels.map(l => l.replace(" & ", "/").replace(" Identification","").replace(" Treatments","").replace(" Changes","").replace(" Health","").replace(" Support","").replace(" Access","").replace("Community ","").replace("Mental/Cognitive","Mental").replace("Non-Hormonal","Non-Horm.").replace("Perimenopause/Transition","Peri.").replace("Medical/Care","Medical"));
+    // max off-diagonal value for colour scaling
+    const offVals = [];
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j) offVals.push(matrix[i][j]);
+    const maxOff = Math.max(...offVals, 1);
+
+    function cellColor(val, isDiag) {
+      if (isDiag) return "background:#1a1a2e;color:#555";
+      const t = val / maxOff;
+      // interpolate from #1e1e1e → #7b2d8b → #e040fb
+      const r = Math.round(30 + t * (224 - 30));
+      const g = Math.round(30 + t * (64 - 30));
+      const b = Math.round(30 + t * (251 - 30));
+      const fg = t > 0.45 ? "#fff" : t > 0.15 ? "#ddd" : "#777";
+      return `background:rgb(${r},${g},${b});color:${fg}`;
+    }
+
+    let html = `<div style="overflow-x:auto"><table class="coo-table"><thead><tr><th></th>`;
+    for (let j = 0; j < n; j++) {
+      html += `<th title="${esc(labels[j])}">${esc(short[j])}</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+    for (let i = 0; i < n; i++) {
+      html += `<tr><th title="${esc(labels[i])}">${esc(short[i])}</th>`;
+      for (let j = 0; j < n; j++) {
+        const v = matrix[i][j];
+        const isDiag = i === j;
+        const title = isDiag ? labels[i] : `${labels[i]} ∩ ${labels[j]}: ${v} posts`;
+        html += `<td style="${cellColor(v, isDiag)}" title="${esc(title)}">${isDiag ? "—" : v || ""}</td>`;
+      }
+      html += `</tr>`;
+    }
+    html += `</tbody></table></div>
+    <div style="margin-top:.6rem;font-size:.72rem;color:#666">Each cell = posts matching both row and column topic. Diagonal excluded. Hover for details.</div>`;
+
+    document.getElementById("cooccurrence-content").innerHTML = html;
+    document.getElementById("cooccurrence-section").style.display = "block";
   }
 
   // ── Collection Artifacts ──────────────────────────────────

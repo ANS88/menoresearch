@@ -397,6 +397,32 @@ def api_categorize():
     return jsonify({"ok": True, "categories": results, "total_posts": len(posts)})
 
 
+@app.route("/api/cooccurrence", methods=["POST"])
+def api_cooccurrence():
+    """Return a co-occurrence matrix: how many posts match each pair of categories."""
+    body = request.get_json(force=True, silent=True) or {}
+    posts = body.get("posts", [])
+    if not posts:
+        return jsonify({"ok": False, "error": "no posts provided"}), 400
+
+    ids     = [c["id"]    for c in POST_CATEGORIES]
+    labels  = [c["label"] for c in POST_CATEGORIES]
+    patterns = [c["patterns"] for c in POST_CATEGORIES]
+    n = len(ids)
+
+    # matched[i] = set of post indices that match category i
+    matched = [set() for _ in range(n)]
+    for idx, p in enumerate(posts):
+        text = (p.get("title", "") + " " + p.get("selftext", "")).lower()
+        for i, pats in enumerate(patterns):
+            if any(pat in text for pat in pats):
+                matched[i].add(idx)
+
+    matrix = [[len(matched[i] & matched[j]) for j in range(n)] for i in range(n)]
+
+    return jsonify({"ok": True, "ids": ids, "labels": labels, "matrix": matrix})
+
+
 def _pearson(x, y):
     """Pearson r between two equal-length lists. Returns 0 if constant."""
     n = len(x)
