@@ -516,6 +516,119 @@
       font-size: .65rem;
       color: #aaa;
     }
+    /* ── Artifacts section ── */
+    #artifacts-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #artifacts-section.open { display: block; }
+    .artifacts-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.2rem 1.5rem;
+    }
+    .artifacts-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .3rem;
+      color: #333;
+    }
+    .artifacts-subtitle {
+      font-size: .78rem;
+      color: #888;
+      margin-bottom: 1.2rem;
+      line-height: 1.5;
+    }
+    .artifacts-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      gap: 1.5rem;
+      padding: .5rem 0 1rem;
+      flex-wrap: wrap;
+    }
+    .artifact-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      position: relative;
+      cursor: default;
+    }
+    .artifact-pct {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #C41E3A;
+      line-height: 1;
+    }
+    .artifact-name {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #333;
+    }
+    .artifact-desc {
+      font-size: .72rem;
+      color: #888;
+    }
+    .artifact-count {
+      font-size: .68rem;
+      color: #bbb;
+    }
+    .artifact-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a2a2a;
+      color: #fff;
+      border-radius: 8px;
+      padding: .6rem .85rem;
+      font-size: .7rem;
+      line-height: 1.6;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s;
+      z-index: 10;
+      width: 190px;
+      text-align: left;
+      white-space: pre-line;
+    }
+    .artifact-item:hover .artifact-tooltip { opacity: 1; }
+    .artifacts-legend {
+      border-top: 1px solid #f0f0f0;
+      padding-top: .9rem;
+      margin-top: .2rem;
+    }
+    .artifacts-legend h3 {
+      font-size: .75rem;
+      font-weight: 700;
+      color: #888;
+      margin-bottom: .55rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .legend-row {
+      display: flex;
+      gap: .6rem;
+      align-items: flex-start;
+      margin-bottom: .45rem;
+    }
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+    .legend-text {
+      font-size: .76rem;
+      color: #555;
+      line-height: 1.5;
+    }
+    .legend-text strong { color: #333; }
   </style>
 </head>
 <body>
@@ -549,12 +662,23 @@
   <button id="kwBtn" onclick="toggleKeywords()">Show Keywords</button>
   <button id="corrBtn" onclick="toggleCorrelation()">Show Correlation</button>
   <button id="analyticsBtn" onclick="toggleAnalytics()">Show Analytics</button>
+  <button id="artifactsBtn" onclick="toggleArtifacts()">Show Artifacts</button>
 </div>
 
 <div id="analytics-section">
   <div class="analytics-panel">
     <h2>Community Analytics <span id="analytics-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
     <div id="analytics-content">
+      <div style="color:#aaa;font-size:.85rem">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div id="artifacts-section">
+  <div class="artifacts-panel">
+    <h2>Collection Artifacts <span id="artifacts-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div class="artifacts-subtitle">Each artifact collects a category of menopause experiences from r/menopause. The fill level shows its share of total symptom mentions — hover an artifact to see the breakdown.</div>
+    <div id="artifacts-content">
       <div style="color:#aaa;font-size:.85rem">Loading…</div>
     </div>
   </div>
@@ -655,7 +779,7 @@
     const limit = document.getElementById("limit").value;
     const btn = document.getElementById("loadBtn");
     btn.disabled = true;
-    kwLoaded = false; sympLoaded = false; corrLoaded = false; analyticsLoaded = false;
+    kwLoaded = false; sympLoaded = false; corrLoaded = false; analyticsLoaded = false; artifactsLoaded = false;
 
     document.getElementById("error").style.display = "none";
     document.getElementById("posts").innerHTML = "";
@@ -1242,6 +1366,200 @@
             <span class="day-name">${d}</span>
             <span class="day-n">${dayCounts[i]}</span>
           </div>`).join("")}
+      </div>`;
+  }
+
+  // ── Collection Artifacts ──────────────────────────────────
+  const ARTIFACT_DEFS = [
+    {
+      id: "tampon",
+      label: "Tampon",
+      desc: "Vasomotor & Physical",
+      color: "#C41E3A",
+      symptoms: ["hot flashes","night sweats","vaginal dryness","irregular periods","urinary issues","bloating"],
+    },
+    {
+      id: "pad",
+      label: "Pad",
+      desc: "Mental & Emotional",
+      color: "#8B1A3A",
+      symptoms: ["brain fog","insomnia","anxiety","depression","mood swings","fatigue","memory loss","headaches","low libido"],
+    },
+    {
+      id: "cup",
+      label: "Menstrual Cup",
+      desc: "Systemic & Body",
+      color: "#5C0E1F",
+      symptoms: ["joint pain","weight gain","heart palpitations","skin changes","hair loss"],
+    },
+  ];
+
+  let artifactsLoaded = false;
+
+  // Draw a tampon: tall pill/capsule body with a string at the bottom
+  function drawTampon(pct, color) {
+    const uid = "t" + Math.random().toString(36).slice(2, 8);
+    const bY = 15, bH = 185;
+    const fillYn = Math.max(bY, bY + bH * (1 - pct));
+    const fillY = fillYn.toFixed(1);
+    const hasLine = pct > 0.04 && pct < 0.97;
+    const levelLine = hasLine
+      ? `<line x1="34" y1="${fillY}" x2="66" y2="${fillY}" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/>`
+      : "";
+    return `<svg viewBox="0 0 100 260" width="80" height="208">
+      <defs><clipPath id="${uid}"><rect x="30" y="${bY}" width="40" height="${bH}" rx="20" ry="20"/></clipPath></defs>
+      <rect x="30" y="${bY}" width="40" height="${bH}" rx="20" ry="20" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="30" y="${fillY}" width="40" height="${bY + bH - fillYn + 5}" fill="${color}" opacity="0.82" clip-path="url(#${uid})"/>
+      ${levelLine}
+      <line x1="50" y1="${bY + bH}" x2="50" y2="245" stroke="${color}" stroke-width="1.5"/>
+      <circle cx="50" cy="247" r="3" fill="${color}"/>
+    </svg>`;
+  }
+
+  // Draw a pad: wide flat body with wings on each side
+  function drawPad(pct, color) {
+    const uid = "p" + Math.random().toString(36).slice(2, 8);
+    const bX = 25, bY = 30, bW = 130, bH = 140;
+    const fillYn = Math.max(bY, bY + bH * (1 - pct));
+    const fillY = fillYn.toFixed(1);
+    const hasLine = pct > 0.04 && pct < 0.97;
+    const levelLine = hasLine
+      ? `<line x1="${bX + 6}" y1="${fillY}" x2="${bX + bW - 6}" y2="${fillY}" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/>`
+      : "";
+    return `<svg viewBox="0 0 180 190" width="160" height="169">
+      <defs><clipPath id="${uid}"><rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="20" ry="20"/></clipPath></defs>
+      <rect x="3"   y="60" width="26" height="72" rx="9" fill="#fdf2f2" stroke="${color}" stroke-width="1.8" opacity="0.85"/>
+      <rect x="151" y="60" width="26" height="72" rx="9" fill="#fdf2f2" stroke="${color}" stroke-width="1.8" opacity="0.85"/>
+      <rect x="3"   y="60" width="26" height="72" rx="9" fill="${color}" opacity="0.22"/>
+      <rect x="151" y="60" width="26" height="72" rx="9" fill="${color}" opacity="0.22"/>
+      <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="20" ry="20" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="${bX}" y="${fillY}" width="${bW}" height="${bY + bH - fillYn + 5}" fill="${color}" opacity="0.82" clip-path="url(#${uid})"/>
+      ${levelLine}
+    </svg>`;
+  }
+
+  // Draw a menstrual cup: tapered trapezoidal body with a rim and stem
+  function drawCup(pct, color) {
+    const uid = "c" + Math.random().toString(36).slice(2, 8);
+    const topY = 40, botY = 192, cupH = botY - topY;
+    const fillYn = Math.max(topY, topY + cupH * (1 - pct));
+    const fillY = fillYn.toFixed(1);
+    const cupPath = `M 22,${topY} L 118,${topY} L 100,${botY - 10} Q 70,${botY + 10} 40,${botY - 10} Z`;
+    let levelLine = "";
+    if (pct > 0.04 && pct < 0.97) {
+      const t = (fillYn - topY) / cupH;
+      const lx = (22 + t * (40 - 22)).toFixed(1);
+      const rx = (118 - t * (118 - 100)).toFixed(1);
+      levelLine = `<line x1="${parseFloat(lx) + 3}" y1="${fillY}" x2="${parseFloat(rx) - 3}" y2="${fillY}" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"/>`;
+    }
+    return `<svg viewBox="0 0 140 260" width="110" height="204">
+      <defs><clipPath id="${uid}"><path d="${cupPath}"/></clipPath></defs>
+      <path d="${cupPath}" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="0" y="${fillY}" width="140" height="${botY - fillYn + 20}" fill="${color}" opacity="0.82" clip-path="url(#${uid})"/>
+      ${levelLine}
+      <ellipse cx="70" cy="${topY}" rx="48" ry="8" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="64" y="${botY + 9}" width="12" height="30" rx="6" fill="${color}" opacity="0.65"/>
+    </svg>`;
+  }
+
+  async function toggleArtifacts() {
+    const section = document.getElementById("artifacts-section");
+    const btn = document.getElementById("artifactsBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Show Artifacts";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Artifacts";
+    if (artifactsLoaded) return;
+
+    const el = document.getElementById("artifacts-content");
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching symptom data…</div>`;
+
+    let posts = allPosts.length ? allPosts : [];
+    if (!posts.length) {
+      try { posts = await fetchAllPostsBrowser("hot", 3, null); } catch (_) {}
+    }
+
+    let symptoms = [];
+    try {
+      if (posts.length) {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "symptoms", posts }),
+        });
+        const data = await res.json();
+        if (data.ok) symptoms = data.symptoms;
+      }
+    } catch (_) {}
+
+    if (!symptoms.length) {
+      try {
+        const res = await fetch("/api/symptoms");
+        const data = await res.json();
+        if (data.ok) symptoms = data.symptoms;
+      } catch (_) {}
+    }
+
+    if (!symptoms.length) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Failed to load symptom data.</div>`;
+      return;
+    }
+
+    document.getElementById("artifacts-source").textContent = `(${posts.length} posts)`;
+    renderArtifacts(symptoms);
+    artifactsLoaded = true;
+  }
+
+  function renderArtifacts(symptoms) {
+    const el = document.getElementById("artifacts-content");
+    const symMap = {};
+    symptoms.forEach(s => { symMap[s.symptom] = s.mentions; });
+
+    const groups = ARTIFACT_DEFS.map(def => ({
+      ...def,
+      mentions: def.symptoms.reduce((sum, sym) => sum + (symMap[sym] || 0), 0),
+    }));
+    const total = groups.reduce((s, g) => s + g.mentions, 0) || 1;
+
+    const artifactsHTML = groups.map(g => {
+      const pct = g.mentions / total;
+      const pctLabel = Math.round(pct * 100) + "%";
+      const svg = g.id === "tampon" ? drawTampon(pct, g.color)
+                : g.id === "pad"    ? drawPad(pct, g.color)
+                :                     drawCup(pct, g.color);
+      const tipLines = g.symptoms
+        .filter(s => symMap[s])
+        .map(s => `${s}: ${symMap[s]}`)
+        .join("\n") || "No data";
+      return `<div class="artifact-item">
+        <div class="artifact-tooltip">${esc(tipLines)}</div>
+        ${svg}
+        <div class="artifact-pct">${pctLabel}</div>
+        <div class="artifact-name">${esc(g.label)}</div>
+        <div class="artifact-desc">${esc(g.desc)}</div>
+        <div class="artifact-count">${g.mentions} mentions</div>
+      </div>`;
+    }).join("");
+
+    const legendHTML = groups.map(g => {
+      const parts = g.symptoms
+        .filter(s => symMap[s])
+        .map(s => `${esc(s)} <span style="color:#bbb">(${symMap[s]})</span>`)
+        .join(" · ") || "<em style='color:#bbb'>no data</em>";
+      return `<div class="legend-row">
+        <div class="legend-dot" style="background:${g.color}"></div>
+        <div class="legend-text"><strong>${esc(g.label)}</strong> — ${parts}</div>
+      </div>`;
+    }).join("");
+
+    el.innerHTML = `
+      <div class="artifacts-row">${artifactsHTML}</div>
+      <div class="artifacts-legend">
+        <h3>Symptom breakdown</h3>
+        ${legendHTML}
       </div>`;
   }
 
