@@ -1101,19 +1101,30 @@
     const el = document.getElementById("analytics-content");
     el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (0)</div>`;
 
-    // Fetch top-all-time posts for historical coverage (up to 1000 posts spanning years)
+    // Fetch top?t=all page by page — keep whatever succeeds, stop on first failure
     let posts = [];
-    try {
-      posts = await fetchAllPostsBrowser("top", 10, (n) => {
-        el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (${n})</div>`;
-      }, "t=all");
-    } catch (_) {
-      // Fall back to already-loaded posts
-      posts = allPosts.slice();
+    let after = null;
+    for (let page = 0; page < 10; page++) {
+      try {
+        let url = `https://www.reddit.com/r/menopause/top.json?limit=100&t=all&raw_json=1`;
+        if (after) url += `&after=${after}`;
+        const res = await fetch(url);
+        if (!res.ok) break;
+        const data = await res.json();
+        const children = data.data.children;
+        if (!children.length) break;
+        posts.push(...parseChildren(children));
+        el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (${posts.length})</div>`;
+        after = data.data.after;
+        if (!after) break;
+        if (page < 9) await new Promise(r => setTimeout(r, 1000));
+      } catch (_) {
+        break; // keep what we have, stop paginating
+      }
     }
 
     if (!posts.length) {
-      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">No posts available. Click "Load Posts" first, then try again.</div>`;
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;
       return;
     }
 
