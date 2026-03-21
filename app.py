@@ -269,6 +269,131 @@ def api_stats():
         })
 
 
+POST_CATEGORIES = [
+    {
+        "id": "hrt",
+        "label": "HRT & Hormone Therapy",
+        "patterns": [
+            "hrt", "hormone therapy", "hormone replacement", "estrogen", "estradiol",
+            "progesterone", "progestin", "testosterone", "bioidentical", "vivelle",
+            "prometrium", "provera", "norethindrone", "patch", "pellet",
+        ],
+    },
+    {
+        "id": "symptoms",
+        "label": "Symptom Identification",
+        "patterns": [
+            "hot flash", "hot flush", "night sweat", "hot flashes", "hot flushes",
+            "palpitation", "racing heart", "dizzy", "dizziness", "tingling",
+            "formication", "crawling skin", "symptom",
+        ],
+    },
+    {
+        "id": "nonhormonal",
+        "label": "Non-Hormonal Treatments",
+        "patterns": [
+            "magnesium", "ashwagandha", "black cohosh", "evening primrose",
+            "supplement", "vitamin", "herbal", "natural remedy", "lifestyle",
+            "exercise", "strength training", "yoga", "meditation", "acupuncture",
+            "weighted blanket", "cut alcohol", "diet change",
+        ],
+    },
+    {
+        "id": "mental",
+        "label": "Mental & Cognitive Health",
+        "patterns": [
+            "brain fog", "anxiety", "anxious", "depression", "depressed",
+            "mood swing", "mood change", "irritab", "rage", "anger",
+            "panic attack", "panic", "memory", "forget", "cognitive",
+            "tearful", "crying", "low mood", "mental health",
+        ],
+    },
+    {
+        "id": "medical",
+        "label": "Medical Access & Care",
+        "patterns": [
+            "doctor", "physician", "gp", "gynecologist", "specialist",
+            "dismissed", "too young", "bloodwork", "blood test", "fsh", "lh",
+            "diagnosis", "menopause specialist", "obgyn", "ob/gyn",
+            "appointment", "prescribed", "prescription",
+        ],
+    },
+    {
+        "id": "sleep",
+        "label": "Sleep",
+        "patterns": [
+            "sleep", "insomnia", "awake at", "wake up", "waking up",
+            "restless", "sleepless", "can't sleep", "cannot sleep",
+            "sleep problem", "sleep issue",
+        ],
+    },
+    {
+        "id": "sexual",
+        "label": "Sexual Health & Relationships",
+        "patterns": [
+            "vaginal dryness", "vaginal atrophy", "libido", "sex drive",
+            "painful sex", "dyspareunia", "intimacy", "relationship", "partner",
+            "husband", "local estrogen", "gsm", "genitourinary",
+        ],
+    },
+    {
+        "id": "body",
+        "label": "Body Changes",
+        "patterns": [
+            "weight gain", "gaining weight", "hair loss", "losing hair",
+            "thinning hair", "skin change", "dry skin", "itchy skin",
+            "bloat", "belly fat", "metabolism", "joint pain", "joint ache",
+        ],
+    },
+    {
+        "id": "perimenopause",
+        "label": "Perimenopause & Transition",
+        "patterns": [
+            "perimenopause", "perimenopausal", "peri-menopause",
+            "irregular period", "irregular cycle", "skipped period",
+            "missed period", "still having period", "transition",
+        ],
+    },
+    {
+        "id": "support",
+        "label": "Community Support & Shared Experience",
+        "patterns": [
+            "anyone else", "not alone", "feeling alone", "thank you",
+            "support thread", "weekly thread", "sharing", "vent",
+            "grateful", "hope", "solidarity", "me too",
+        ],
+    },
+]
+
+
+@app.route("/api/categorize", methods=["POST"])
+def api_categorize():
+    """Assign posts to topic categories based on keyword matching."""
+    body = request.get_json(force=True, silent=True) or {}
+    posts = body.get("posts", [])
+    if not posts:
+        return jsonify({"ok": False, "error": "no posts provided"}), 400
+
+    results = []
+    for cat in POST_CATEGORIES:
+        matched = []
+        for p in posts:
+            text = (p.get("title", "") + " " + p.get("selftext", "")).lower()
+            hits = sum(text.count(pat) for pat in cat["patterns"])
+            if hits > 0:
+                matched.append((hits, p))
+        matched.sort(key=lambda x: (x[0], x[1].get("score", 0)), reverse=True)
+        results.append({
+            "id": cat["id"],
+            "label": cat["label"],
+            "count": len(matched),
+            "posts": [p for _, p in matched[:25]],
+        })
+
+    results.sort(key=lambda x: x["count"], reverse=True)
+    return jsonify({"ok": True, "categories": results, "total_posts": len(posts)})
+
+
 def _pearson(x, y):
     """Pearson r between two equal-length lists. Returns 0 if constant."""
     n = len(x)

@@ -516,6 +516,101 @@
       font-size: .65rem;
       color: #aaa;
     }
+    /* ── Categories section ── */
+    #categories-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #categories-section.open { display: block; }
+    .categories-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.1rem 1.4rem;
+    }
+    .categories-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .25rem;
+      color: #333;
+    }
+    .categories-subtitle {
+      font-size: .78rem;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+    .cat-group {
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cat-group:last-child { border-bottom: none; }
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .65rem 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cat-header:hover .cat-label { color: #ff4500; }
+    .cat-label {
+      font-size: .9rem;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+      transition: color .15s;
+    }
+    .cat-count {
+      font-size: .75rem;
+      color: #fff;
+      background: #ff4500;
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .cat-count.zero { background: #ddd; color: #aaa; }
+    .cat-chevron {
+      font-size: .75rem;
+      color: #bbb;
+      transition: transform .2s;
+      width: 14px;
+      text-align: center;
+    }
+    .cat-chevron.open { transform: rotate(180deg); }
+    .cat-posts {
+      padding: .2rem 0 .8rem 0;
+    }
+    .cat-post-row {
+      display: flex;
+      align-items: baseline;
+      gap: .6rem;
+      padding: .3rem 0;
+      border-bottom: 1px solid #fafafa;
+    }
+    .cat-post-row:last-child { border-bottom: none; }
+    .cat-post-score {
+      font-size: .75rem;
+      font-weight: 700;
+      color: #ff4500;
+      min-width: 38px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .cat-post-title {
+      font-size: .83rem;
+      color: #333;
+      text-decoration: none;
+      line-height: 1.4;
+    }
+    .cat-post-title:hover { color: #ff4500; text-decoration: underline; }
+    .cat-more {
+      font-size: .73rem;
+      color: #aaa;
+      padding: .35rem 0 0;
+    }
+
     /* ── Artifacts section ── */
     #artifacts-section {
       max-width: 860px;
@@ -663,12 +758,23 @@
   <button id="corrBtn" onclick="toggleCorrelation()">Show Correlation</button>
   <button id="analyticsBtn" onclick="toggleAnalytics()">Show Analytics</button>
   <button id="artifactsBtn" onclick="toggleArtifacts()">Show Artifacts</button>
+  <button id="categoriesBtn" onclick="toggleCategories()">Browse by Topic</button>
 </div>
 
 <div id="analytics-section">
   <div class="analytics-panel">
     <h2>Community Analytics <span id="analytics-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
     <div id="analytics-content">
+      <div style="color:#aaa;font-size:.85rem">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div id="categories-section">
+  <div class="categories-panel">
+    <h2>Posts by Topic <span id="categories-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div class="categories-subtitle">All-time top posts grouped by topic. A post may appear in multiple categories.</div>
+    <div id="categories-content">
       <div style="color:#aaa;font-size:.85rem">Loading…</div>
     </div>
   </div>
@@ -779,7 +885,7 @@
     const limit = document.getElementById("limit").value;
     const btn = document.getElementById("loadBtn");
     btn.disabled = true;
-    kwLoaded = false; sympLoaded = false; corrLoaded = false; analyticsLoaded = false; artifactsLoaded = false;
+    kwLoaded = false; sympLoaded = false; corrLoaded = false; analyticsLoaded = false; artifactsLoaded = false; categoriesLoaded = false;
 
     document.getElementById("error").style.display = "none";
     document.getElementById("posts").innerHTML = "";
@@ -1367,6 +1473,112 @@
             <span class="day-n">${dayCounts[i]}</span>
           </div>`).join("")}
       </div>`;
+  }
+
+  // ── Browse by Topic ───────────────────────────────────────
+  let categoriesLoaded = false;
+
+  async function toggleCategories() {
+    const section = document.getElementById("categories-section");
+    const btn = document.getElementById("categoriesBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Browse by Topic";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Topics";
+    if (categoriesLoaded) return;
+
+    const el = document.getElementById("categories-content");
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (0)</div>`;
+
+    // Fetch top?t=all, page by page, preserve partial results on error
+    let posts = [];
+    let after = null;
+    for (let page = 0; page < 10; page++) {
+      try {
+        let url = `https://www.reddit.com/r/menopause/top.json?limit=100&t=all&raw_json=1`;
+        if (after) url += `&after=${after}`;
+        const res = await fetch(url);
+        if (!res.ok) break;
+        const data = await res.json();
+        const children = data.data.children;
+        if (!children.length) break;
+        posts.push(...parseChildren(children));
+        el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (${posts.length})</div>`;
+        after = data.data.after;
+        if (!after) break;
+        if (page < 9) await new Promise(r => setTimeout(r, 1000));
+      } catch (_) { break; }
+    }
+
+    if (!posts.length) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;
+      return;
+    }
+
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Classifying ${posts.length} posts…</div>`;
+
+    try {
+      const res = await fetch("/api/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ posts }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "failed");
+      document.getElementById("categories-source").textContent =
+        `(${posts.length} all-time top posts)`;
+      renderCategories(data.categories);
+      categoriesLoaded = true;
+    } catch (e) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Classification failed: ${esc(e.message)}</div>`;
+    }
+  }
+
+  function toggleCatGroup(id) {
+    const postsEl = document.getElementById(`catposts-${id}`);
+    const chevEl  = document.getElementById(`chev-${id}`);
+    const isOpen  = postsEl.style.display !== "none";
+    postsEl.style.display = isOpen ? "none" : "block";
+    chevEl.classList.toggle("open", !isOpen);
+  }
+
+  function fmtScore(n) {
+    return n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n);
+  }
+
+  function renderCategories(categories) {
+    const el = document.getElementById("categories-content");
+    if (!categories.length) {
+      el.innerHTML = `<div style="color:#aaa;font-size:.85rem">No categories found.</div>`;
+      return;
+    }
+    el.innerHTML = categories.map(cat => {
+      const countCls = cat.count === 0 ? "cat-count zero" : "cat-count";
+      const rows = cat.posts.map(p => {
+        const score = fmtScore(p.score || 0);
+        return `<div class="cat-post-row">
+          <span class="cat-post-score">${esc(score)}</span>
+          <a class="cat-post-title" href="${escAttr(p.url)}" target="_blank">${esc(p.title)}</a>
+        </div>`;
+      }).join("");
+      const overflow = cat.count > cat.posts.length
+        ? `<div class="cat-more">+ ${cat.count - cat.posts.length} more posts in this category</div>`
+        : "";
+      return `<div class="cat-group">
+        <div class="cat-header" onclick="toggleCatGroup('${esc(cat.id)}')">
+          <span class="cat-label">${esc(cat.label)}</span>
+          <span class="${countCls}">${cat.count}</span>
+          <span class="cat-chevron" id="chev-${esc(cat.id)}">▼</span>
+        </div>
+        <div class="cat-posts" id="catposts-${esc(cat.id)}" style="display:none">
+          ${rows}
+          ${overflow}
+        </div>
+      </div>`;
+    }).join("");
   }
 
   // ── Collection Artifacts ──────────────────────────────────
