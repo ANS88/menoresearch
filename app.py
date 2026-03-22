@@ -418,7 +418,7 @@ def api_analyze_comments():
         cat_posts[cat_id].sort(key=lambda x: x[0], reverse=True)
 
     results = []
-    seen_permalinks = set()  # avoid fetching the same post twice across categories
+    comment_cache = {}  # permalink -> list of comments, to avoid re-fetching
 
     for cat in POST_CATEGORIES:
         cat_id = cat["id"]
@@ -427,18 +427,18 @@ def api_analyze_comments():
 
         for p in top_posts:
             permalink = p["url"].replace("https://reddit.com", "")
-            if permalink in seen_permalinks:
-                # still include previously fetched comments stored on the post
+            if permalink in comment_cache:
+                all_comments.extend(comment_cache[permalink])
                 continue
-            seen_permalinks.add(permalink)
             try:
                 comments = get_comments(permalink, limit=comments_per_post)
                 for c in comments:
                     c["post_title"] = p["title"]
                     c["post_url"] = p["url"]
+                comment_cache[permalink] = comments
                 all_comments.extend(comments)
             except Exception:
-                pass
+                comment_cache[permalink] = []
 
         # Sort by score, take top 10
         top_comments = sorted(all_comments, key=lambda c: c.get("score", 0), reverse=True)[:10]
