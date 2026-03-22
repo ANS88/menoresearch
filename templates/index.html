@@ -685,6 +685,102 @@
     .cat-comment-link { color: #aaa; text-decoration: none; }
     .cat-comment-link:hover { color: #ff4500; text-decoration: underline; }
 
+    /* ── Topic Tables section ── */
+    #topic-tables-section {
+      max-width: 960px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #topic-tables-section.open { display: block; }
+    .topic-tables-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.1rem 1.4rem;
+    }
+    .topic-tables-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .25rem;
+      color: #333;
+    }
+    .topic-tables-subtitle {
+      font-size: .78rem;
+      color: #888;
+      margin-bottom: 1.2rem;
+    }
+    .topic-table-block {
+      margin-bottom: 2rem;
+    }
+    .topic-table-block:last-child { margin-bottom: 0; }
+    .topic-table-title {
+      font-size: .9rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: .45rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .topic-table-count {
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fff;
+      background: #ff4500;
+      border-radius: 20px;
+      padding: 1px 8px;
+    }
+    .topic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+    .topic-table thead th {
+      text-align: left;
+      padding: .4rem .6rem;
+      border-bottom: 2px solid #f0f0f0;
+      font-size: .72rem;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .topic-table thead th:first-child { width: 32px; text-align: center; }
+    .topic-table thead th.th-score,
+    .topic-table thead th.th-comments { width: 72px; text-align: right; }
+    .topic-table tbody tr:hover { background: #fafafa; }
+    .topic-table tbody td {
+      padding: .38rem .6rem;
+      border-bottom: 1px solid #f5f5f5;
+      vertical-align: middle;
+    }
+    .topic-table tbody tr:last-child td { border-bottom: none; }
+    .tt-rank {
+      text-align: center;
+      color: #ccc;
+      font-weight: 700;
+      font-size: .75rem;
+    }
+    .tt-title {
+      color: #333;
+      text-decoration: none;
+      line-height: 1.4;
+    }
+    .tt-title:hover { color: #ff4500; text-decoration: underline; }
+    .tt-score {
+      text-align: right;
+      font-weight: 700;
+      color: #ff4500;
+      white-space: nowrap;
+    }
+    .tt-comments {
+      text-align: right;
+      color: #888;
+      white-space: nowrap;
+    }
+
     /* ── Artifacts section ── */
     #artifacts-section {
       max-width: 860px;
@@ -833,6 +929,7 @@
   <button id="analyticsBtn" onclick="toggleAnalytics()">Show Analytics</button>
   <button id="artifactsBtn" onclick="toggleArtifacts()">Show Artifacts</button>
   <button id="categoriesBtn" onclick="toggleCategories()">Browse by Topic</button>
+  <button id="topicTablesBtn" onclick="toggleTopicTables()">Topic Tables</button>
 </div>
 
 <div id="analytics-section">
@@ -857,6 +954,16 @@
         <span style="font-size:.75rem;font-weight:400;color:#aaa;margin-left:.5rem">how often topics appear in the same post</span>
       </h3>
       <div id="cooccurrence-content"></div>
+    </div>
+  </div>
+</div>
+
+<div id="topic-tables-section">
+  <div class="topic-tables-panel">
+    <h2>Posts by Topic <span id="topic-tables-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div class="topic-tables-subtitle">Top 10 posts per topic category, ranked by relevance score.</div>
+    <div id="topic-tables-content">
+      <div style="color:#aaa;font-size:.85rem">Loading…</div>
     </div>
   </div>
 </div>
@@ -966,7 +1073,7 @@
     const limit = document.getElementById("limit").value;
     const btn = document.getElementById("loadBtn");
     btn.disabled = true;
-    kwLoaded = false; sympLoaded = false; corrLoaded = false; analyticsLoaded = false; artifactsLoaded = false; categoriesLoaded = false;
+    kwLoaded = false; sympLoaded = false; corrLoaded = false; analyticsLoaded = false; artifactsLoaded = false; categoriesLoaded = false; topicTablesLoaded = false;
 
     document.getElementById("error").style.display = "none";
     document.getElementById("posts").innerHTML = "";
@@ -1558,6 +1665,7 @@
 
   // ── Browse by Topic ───────────────────────────────────────
   let categoriesLoaded = false;
+  let cachedCategoryData = null; // shared with Topic Tables
 
   async function toggleCategories() {
     const section = document.getElementById("categories-section");
@@ -1601,6 +1709,7 @@
       if (!data.ok) throw new Error(data.error || "failed");
       document.getElementById("categories-source").textContent =
         `(${posts.length} all-time top posts)`;
+      cachedCategoryData = { categories: data.categories, postCount: posts.length };
       renderCategories(data.categories);
       categoriesLoaded = true;
       loadCategoryComments();
@@ -1756,6 +1865,103 @@
       el.insertAdjacentHTML("beforeend",
         `<div class="cat-comments-header">Top Comments</div>${items}`);
     }
+  }
+
+  // ── Topic Tables ──────────────────────────────────────────
+  let topicTablesLoaded = false;
+
+  async function toggleTopicTables() {
+    const section = document.getElementById("topic-tables-section");
+    const btn = document.getElementById("topicTablesBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Topic Tables";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Tables";
+    if (topicTablesLoaded) return;
+
+    const el = document.getElementById("topic-tables-content");
+
+    // Reuse data already fetched by Browse by Topic if available
+    if (cachedCategoryData) {
+      document.getElementById("topic-tables-source").textContent =
+        `(${cachedCategoryData.postCount} all-time top posts)`;
+      renderTopicTables(cachedCategoryData.categories);
+      topicTablesLoaded = true;
+      return;
+    }
+
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts…</div>`;
+    let posts = [];
+    try {
+      const res = await fetch("/api/top-posts");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "failed");
+      posts = data.posts || [];
+    } catch (_) {}
+
+    if (!posts.length) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;
+      return;
+    }
+
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Classifying ${posts.length} posts…</div>`;
+    try {
+      const res = await fetch("/api/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ posts }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "failed");
+      cachedCategoryData = { categories: data.categories, postCount: posts.length };
+      document.getElementById("topic-tables-source").textContent =
+        `(${posts.length} all-time top posts)`;
+      renderTopicTables(data.categories);
+      topicTablesLoaded = true;
+    } catch (e) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Failed: ${esc(e.message)}</div>`;
+    }
+  }
+
+  function renderTopicTables(categories) {
+    const el = document.getElementById("topic-tables-content");
+    if (!categories.length) {
+      el.innerHTML = `<div style="color:#aaa;font-size:.85rem">No data.</div>`;
+      return;
+    }
+    el.innerHTML = categories.map(cat => {
+      const top10 = cat.posts.slice(0, 10);
+      const countBadge = `<span class="topic-table-count">${cat.count} posts</span>`;
+      const rows = top10.map((p, i) => {
+        const score = fmtScore(p.score || 0);
+        const comments = fmtScore(p.num_comments || 0);
+        return `<tr>
+          <td class="tt-rank">${i + 1}</td>
+          <td><a class="tt-title" href="${escAttr(p.url)}" target="_blank">${esc(p.title)}</a></td>
+          <td class="tt-score">${esc(score)}</td>
+          <td class="tt-comments">💬 ${esc(comments)}</td>
+        </tr>`;
+      }).join("");
+      const empty = top10.length === 0
+        ? `<tr><td colspan="4" style="color:#aaa;padding:.5rem .6rem;font-size:.8rem">No posts matched this category.</td></tr>`
+        : "";
+      return `<div class="topic-table-block">
+        <div class="topic-table-title">${esc(cat.label)} ${countBadge}</div>
+        <table class="topic-table">
+          <thead><tr>
+            <th>#</th>
+            <th>Title</th>
+            <th class="th-score">Score</th>
+            <th class="th-comments">Comments</th>
+          </tr></thead>
+          <tbody>${rows}${empty}</tbody>
+        </table>
+      </div>`;
+    }).join("");
   }
 
   // ── Collection Artifacts ──────────────────────────────────
