@@ -1566,29 +1566,32 @@
     el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Classifying ${posts.length} posts…</div>`;
 
     try {
-      const [catRes, cooRes] = await Promise.all([
-        fetch("/api/categorize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ posts }),
-        }),
-        fetch("/api/cooccurrence", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ posts }),
-        }),
-      ]);
-      const data = await catRes.json();
+      const res = await fetch("/api/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ posts }),
+      });
+      const data = await res.json();
       if (!data.ok) throw new Error(data.error || "failed");
       document.getElementById("categories-source").textContent =
         `(${posts.length} all-time top posts)`;
       renderCategories(data.categories);
-      const cooData = await cooRes.json();
-      if (cooData.ok) renderCooccurrence(cooData);
       categoriesLoaded = true;
     } catch (e) {
       el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Classification failed: ${esc(e.message)}</div>`;
+      return;
     }
+
+    // Co-occurrence heatmap — separate try so it can't break the category list
+    try {
+      const res = await fetch("/api/cooccurrence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ posts }),
+      });
+      const cooData = await res.json();
+      if (cooData.ok) renderCooccurrence(cooData);
+    } catch (_) { /* heatmap is optional */ }
   }
 
   function toggleCatGroup(id) {
