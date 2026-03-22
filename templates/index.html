@@ -576,38 +576,38 @@
       font-size: .7rem;
     }
     .coo-table th, .coo-table td {
-      width: 44px;
-      min-width: 44px;
+      width: 46px;
+      min-width: 46px;
       height: 34px;
       text-align: center;
       padding: 2px 3px;
-      border: 1px solid #111;
+      border: 1px solid #e8e8e8;
     }
     .coo-table thead th {
-      background: #111;
-      color: #999;
-      font-weight: 500;
-      font-size: .65rem;
+      background: #fafafa;
+      color: #555;
+      font-weight: 600;
+      font-size: .63rem;
       writing-mode: vertical-rl;
       text-orientation: mixed;
       transform: rotate(180deg);
-      max-width: 44px;
+      max-width: 46px;
       overflow: hidden;
       white-space: nowrap;
-      height: 90px;
+      height: 88px;
       vertical-align: bottom;
     }
     .coo-table thead th:first-child { writing-mode: horizontal-tb; transform: none; height: auto; }
     .coo-table tbody th {
-      background: #111;
-      color: #999;
-      font-weight: 500;
-      font-size: .65rem;
+      background: #fafafa;
+      color: #555;
+      font-weight: 600;
+      font-size: .63rem;
       text-align: right;
-      padding-right: 6px;
+      padding-right: 8px;
       white-space: nowrap;
       width: auto;
-      min-width: 90px;
+      min-width: 80px;
     }
     .cat-chevron {
       font-size: .75rem;
@@ -1641,22 +1641,36 @@
 
   function renderCooccurrence({ labels, matrix }) {
     const n = labels.length;
-    // short labels for axis
-    const short = labels.map(l => l.replace(" & ", "/").replace(" Identification","").replace(" Treatments","").replace(" Changes","").replace(" Health","").replace(" Support","").replace(" Access","").replace("Community ","").replace("Mental/Cognitive","Mental").replace("Non-Hormonal","Non-Horm.").replace("Perimenopause/Transition","Peri.").replace("Medical/Care","Medical"));
+    // Short display labels
+    const SHORT = {
+      "HRT & Hormone Therapy":           "HRT",
+      "Symptom Identification":          "Symptoms",
+      "Non-Hormonal Treatments":         "Non-Horm.",
+      "Mental & Cognitive Health":       "Mental",
+      "Medical Access & Care":           "Medical",
+      "Sleep":                           "Sleep",
+      "Sexual Health & Relationships":   "Sexual Hlth",
+      "Body Changes":                    "Body",
+      "Perimenopause & Transition":      "Peri.",
+      "Community Support & Shared Experience": "Community",
+    };
+    const short = labels.map(l => SHORT[l] || l);
+
     // max off-diagonal value for colour scaling
     const offVals = [];
     for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j) offVals.push(matrix[i][j]);
     const maxOff = Math.max(...offVals, 1);
 
-    function cellColor(val, isDiag) {
-      if (isDiag) return "background:#1a1a2e;color:#555";
+    function cellBg(val, isDiag) {
+      if (isDiag) return { bg: "#f0f0f0", fg: "#bbb" };
+      if (val === 0) return { bg: "#fafafa", fg: "#ddd" };
       const t = val / maxOff;
-      // interpolate from #1e1e1e → #7b2d8b → #e040fb
-      const r = Math.round(30 + t * (224 - 30));
-      const g = Math.round(30 + t * (64 - 30));
-      const b = Math.round(30 + t * (251 - 30));
-      const fg = t > 0.45 ? "#fff" : t > 0.15 ? "#ddd" : "#777";
-      return `background:rgb(${r},${g},${b});color:${fg}`;
+      // warm ramp: white → light orange → deep orange
+      const r = Math.round(255);
+      const g = Math.round(255 - t * (255 - 69));
+      const b = Math.round(255 - t * 255);
+      const fg = t > 0.5 ? "#fff" : "#333";
+      return { bg: `rgb(${r},${g},${b})`, fg };
     }
 
     let html = `<div style="overflow-x:auto"><table class="coo-table"><thead><tr><th></th>`;
@@ -1669,13 +1683,14 @@
       for (let j = 0; j < n; j++) {
         const v = matrix[i][j];
         const isDiag = i === j;
+        const { bg, fg } = cellBg(v, isDiag);
         const title = isDiag ? labels[i] : `${labels[i]} ∩ ${labels[j]}: ${v} posts`;
-        html += `<td style="${cellColor(v, isDiag)}" title="${esc(title)}">${isDiag ? "—" : v || ""}</td>`;
+        html += `<td style="background:${bg};color:${fg}" title="${esc(title)}">${isDiag ? "" : v || ""}</td>`;
       }
       html += `</tr>`;
     }
     html += `</tbody></table></div>
-    <div style="margin-top:.6rem;font-size:.72rem;color:#666">Each cell = posts matching both row and column topic. Diagonal excluded. Hover for details.</div>`;
+    <div style="margin-top:.5rem;font-size:.72rem;color:#aaa">Each cell = number of posts matching both row and column topic simultaneously. Hover for details.</div>`;
 
     document.getElementById("cooccurrence-content").innerHTML = html;
     document.getElementById("cooccurrence-section").style.display = "block";
