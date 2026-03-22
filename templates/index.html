@@ -26,6 +26,20 @@
     }
     header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.3px; }
     header .sub { font-size: .85rem; opacity: .85; }
+    .stats-bar {
+      display: flex;
+      gap: 1.4rem;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.2;
+    }
+    .stat-val { font-size: 1rem; font-weight: 700; }
+    .stat-lbl { font-size: .65rem; opacity: .75; text-transform: uppercase; letter-spacing: .4px; }
 
     /* ── Controls ── */
     .controls {
@@ -217,6 +231,151 @@
 
     .no-comments { font-size: .82rem; color: #aaa; padding: .5rem 0; }
 
+    /* ── Keywords panel ── */
+    #keywords-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #keywords-section.open { display: block; }
+    .kw-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1rem 1.2rem;
+    }
+    .kw-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .8rem;
+      color: #333;
+    }
+    .kw-bar-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .35rem;
+    }
+    .kw-label {
+      min-width: 130px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: #333;
+      text-align: right;
+    }
+    .kw-bar-wrap {
+      flex: 1;
+      background: #f0f0f0;
+      border-radius: 4px;
+      height: 18px;
+      overflow: hidden;
+    }
+    .kw-bar {
+      height: 100%;
+      background: #ff4500;
+      border-radius: 4px;
+      transition: width .4s ease;
+    }
+    .kw-count {
+      font-size: .78rem;
+      color: #888;
+      min-width: 28px;
+    }
+
+    /* ── Correlation section ── */
+    #corr-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #corr-section.open { display: block; }
+    .corr-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1rem 1.2rem;
+    }
+    .corr-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .8rem;
+      color: #333;
+    }
+    .corr-tabs {
+      display: flex;
+      gap: .4rem;
+      margin-bottom: .9rem;
+    }
+    .corr-tab {
+      padding: .3rem .8rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #f6f7f8;
+      color: #555;
+      transition: background .15s;
+    }
+    .corr-tab.active { background: #ff4500; color: #fff; border-color: #ff4500; }
+
+    /* heatmap */
+    .heatmap-wrap { overflow-x: auto; }
+    .heatmap-table {
+      border-collapse: collapse;
+      font-size: .68rem;
+      white-space: nowrap;
+    }
+    .heatmap-table th {
+      padding: 2px 4px;
+      color: #555;
+      font-weight: 600;
+      text-align: left;
+    }
+    .heatmap-table td {
+      width: 22px;
+      height: 22px;
+      text-align: center;
+      font-size: .6rem;
+      cursor: default;
+      border: 1px solid #f0f0f0;
+    }
+
+    /* pairs list */
+    .pair-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .3rem;
+    }
+    .pair-words {
+      min-width: 200px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: #333;
+    }
+    .pair-bar-wrap {
+      flex: 1;
+      background: #f0f0f0;
+      border-radius: 4px;
+      height: 16px;
+      overflow: hidden;
+    }
+    .pair-bar {
+      height: 100%;
+      background: #6c63ff;
+      border-radius: 4px;
+      transition: width .4s ease;
+    }
+    .pair-score {
+      font-size: .75rem;
+      color: #888;
+      min-width: 38px;
+      text-align: right;
+    }
+
     /* mock banner */
     .mock-banner {
       background: #fff8e1;
@@ -240,6 +399,405 @@
       max-width: 860px;
       margin: 0 auto 1rem;
     }
+
+    /* ── Analytics section ── */
+    #analytics-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #analytics-section.open { display: block; }
+    .analytics-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1rem 1.2rem;
+    }
+    .analytics-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .9rem;
+      color: #333;
+    }
+    .analytics-summary {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.2rem;
+    }
+    .analytics-stat {
+      display: flex;
+      flex-direction: column;
+      background: #f6f7f8;
+      border-radius: 8px;
+      padding: .55rem .9rem;
+      min-width: 110px;
+    }
+    .analytics-stat .aval {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ff4500;
+      line-height: 1.2;
+    }
+    .analytics-stat .albl {
+      font-size: .67rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .analytics-chart-title {
+      font-size: .82rem;
+      font-weight: 700;
+      color: #555;
+      margin-bottom: .5rem;
+    }
+    .week-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .28rem;
+    }
+    .week-label {
+      font-size: .72rem;
+      color: #888;
+      min-width: 68px;
+      text-align: right;
+    }
+    .week-bar-wrap {
+      flex: 1;
+      background: #f0f0f0;
+      border-radius: 3px;
+      height: 16px;
+      overflow: hidden;
+    }
+    .week-bar {
+      height: 100%;
+      background: #ff4500;
+      border-radius: 3px;
+      transition: width .4s ease;
+    }
+    .week-count {
+      font-size: .72rem;
+      color: #888;
+      min-width: 28px;
+    }
+    .day-grid {
+      display: flex;
+      gap: .4rem;
+      margin-top: .5rem;
+    }
+    .day-cell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .day-bar-wrap {
+      width: 100%;
+      background: #f0f0f0;
+      border-radius: 3px;
+      height: 50px;
+      display: flex;
+      align-items: flex-end;
+    }
+    .day-bar {
+      width: 100%;
+      background: #6c63ff;
+      border-radius: 3px 3px 0 0;
+      transition: height .4s ease;
+    }
+    .day-name {
+      font-size: .65rem;
+      color: #888;
+    }
+    .day-n {
+      font-size: .65rem;
+      color: #aaa;
+    }
+    /* ── Categories section ── */
+    #categories-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #categories-section.open { display: block; }
+    .categories-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.1rem 1.4rem;
+    }
+    .categories-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .25rem;
+      color: #333;
+    }
+    .categories-subtitle {
+      font-size: .78rem;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+    .cat-group {
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cat-group:last-child { border-bottom: none; }
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .65rem 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cat-header:hover .cat-label { color: #ff4500; }
+    .cat-label {
+      font-size: .9rem;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+      transition: color .15s;
+    }
+    .cat-count {
+      font-size: .75rem;
+      color: #fff;
+      background: #ff4500;
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .cat-count.zero { background: #ddd; color: #aaa; }
+    .coo-table {
+      border-collapse: collapse;
+      font-size: .7rem;
+    }
+    .coo-table th, .coo-table td {
+      width: 46px;
+      min-width: 46px;
+      height: 34px;
+      text-align: center;
+      padding: 2px 3px;
+      border: 1px solid #e8e8e8;
+    }
+    .coo-table thead th {
+      background: #fafafa;
+      color: #555;
+      font-weight: 600;
+      font-size: .63rem;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      max-width: 46px;
+      overflow: hidden;
+      white-space: nowrap;
+      height: 88px;
+      vertical-align: bottom;
+    }
+    .coo-table thead th:first-child { writing-mode: horizontal-tb; transform: none; height: auto; }
+    .coo-table tbody th {
+      background: #fafafa;
+      color: #555;
+      font-weight: 600;
+      font-size: .63rem;
+      text-align: right;
+      padding-right: 8px;
+      white-space: nowrap;
+      width: auto;
+      min-width: 80px;
+    }
+    .cat-chevron {
+      font-size: .75rem;
+      color: #bbb;
+      transition: transform .2s;
+      width: 14px;
+      text-align: center;
+    }
+    .cat-chevron.open { transform: rotate(180deg); }
+    .cat-posts {
+      padding: .2rem 0 .8rem 0;
+    }
+    .cat-post-row {
+      display: flex;
+      align-items: baseline;
+      gap: .6rem;
+      padding: .3rem 0;
+      border-bottom: 1px solid #fafafa;
+    }
+    .cat-post-row:last-child { border-bottom: none; }
+    .cat-post-score {
+      font-size: .75rem;
+      font-weight: 700;
+      color: #ff4500;
+      min-width: 38px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .cat-post-title {
+      font-size: .83rem;
+      color: #333;
+      text-decoration: none;
+      line-height: 1.4;
+    }
+    .cat-post-title:hover { color: #ff4500; text-decoration: underline; }
+    .cat-more {
+      font-size: .73rem;
+      color: #aaa;
+      padding: .35rem 0 0;
+    }
+    .cat-comments-header {
+      font-size: .72rem;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin: .9rem 0 .4rem;
+    }
+    .cat-comment-item {
+      border-left: 2px solid #ff4500;
+      padding: .35rem .55rem;
+      margin-bottom: .35rem;
+      background: #fafafa;
+      border-radius: 0 4px 4px 0;
+    }
+    .cat-comment-body {
+      font-size: .8rem;
+      color: #333;
+      line-height: 1.45;
+      margin-bottom: .2rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .cat-comment-meta {
+      font-size: .7rem;
+      color: #aaa;
+      display: flex;
+      gap: .55rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .cat-comment-score { color: #ff4500; font-weight: 700; }
+    .cat-comment-link { color: #aaa; text-decoration: none; }
+    .cat-comment-link:hover { color: #ff4500; text-decoration: underline; }
+
+    /* ── Artifacts section ── */
+    #artifacts-section {
+      max-width: 860px;
+      margin: 0 auto .8rem;
+      padding: 0 1rem;
+      display: none;
+    }
+    #artifacts-section.open { display: block; }
+    .artifacts-panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.2rem 1.5rem;
+    }
+    .artifacts-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .3rem;
+      color: #333;
+    }
+    .artifacts-subtitle {
+      font-size: .78rem;
+      color: #888;
+      margin-bottom: 1.2rem;
+      line-height: 1.5;
+    }
+    .artifacts-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      gap: 1.5rem;
+      padding: .5rem 0 1rem;
+      flex-wrap: wrap;
+    }
+    .artifact-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      position: relative;
+      cursor: default;
+    }
+    .artifact-pct {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #C41E3A;
+      line-height: 1;
+    }
+    .artifact-name {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #333;
+    }
+    .artifact-desc {
+      font-size: .72rem;
+      color: #888;
+    }
+    .artifact-count {
+      font-size: .68rem;
+      color: #bbb;
+    }
+    .artifact-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a2a2a;
+      color: #fff;
+      border-radius: 8px;
+      padding: .6rem .85rem;
+      font-size: .7rem;
+      line-height: 1.6;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s;
+      z-index: 10;
+      width: 190px;
+      text-align: left;
+      white-space: pre-line;
+    }
+    .artifact-item:hover .artifact-tooltip { opacity: 1; }
+    .artifacts-legend {
+      border-top: 1px solid #f0f0f0;
+      padding-top: .9rem;
+      margin-top: .2rem;
+    }
+    .artifacts-legend h3 {
+      font-size: .75rem;
+      font-weight: 700;
+      color: #888;
+      margin-bottom: .55rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .legend-row {
+      display: flex;
+      gap: .6rem;
+      align-items: flex-start;
+      margin-bottom: .45rem;
+    }
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+    .legend-text {
+      font-size: .76rem;
+      color: #555;
+      line-height: 1.5;
+    }
+    .legend-text strong { color: #333; }
   </style>
 </head>
 <body>
@@ -248,6 +806,11 @@
   <div>
     <h1>r/menopause Research Viewer</h1>
     <div class="sub">Browse top posts and community discussions</div>
+  </div>
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-item"><span class="stat-val" id="stat-members">172k</span><span class="stat-lbl">Members</span></div>
+    <div class="stat-item"><span class="stat-val" id="stat-active">—</span><span class="stat-lbl">Online</span></div>
+    <div class="stat-item"><span class="stat-val" id="stat-age">15</span><span class="stat-lbl">Years old</span></div>
   </div>
 </header>
 
@@ -261,9 +824,78 @@
   </select>
 
   <label for="limit">Posts:</label>
-  <input type="number" id="limit" value="10" min="1" max="50" style="width:64px" />
+  <input type="number" id="limit" value="25" min="1" max="100" style="width:64px" />
 
   <button id="loadBtn" onclick="loadPosts()">Load Posts</button>
+  <button id="sympBtn" onclick="toggleSymptoms()">Show Symptoms</button>
+  <button id="kwBtn" onclick="toggleKeywords()">Show Keywords</button>
+  <button id="corrBtn" onclick="toggleCorrelation()">Show Correlation</button>
+  <button id="analyticsBtn" onclick="toggleAnalytics()">Show Analytics</button>
+  <button id="artifactsBtn" onclick="toggleArtifacts()">Show Artifacts</button>
+  <button id="categoriesBtn" onclick="toggleCategories()">Browse by Topic</button>
+</div>
+
+<div id="analytics-section">
+  <div class="analytics-panel">
+    <h2>Community Analytics <span id="analytics-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div id="analytics-content">
+      <div style="color:#aaa;font-size:.85rem">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div id="categories-section">
+  <div class="categories-panel">
+    <h2>Posts by Topic <span id="categories-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div class="categories-subtitle">All-time top posts grouped by topic. A post may appear in multiple categories.</div>
+    <div id="categories-content">
+      <div style="color:#aaa;font-size:.85rem">Loading…</div>
+    </div>
+    <div id="cooccurrence-section" style="display:none;margin-top:2rem">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:.4rem;color:#e0e0e0">
+        Topic Co-occurrence
+        <span style="font-size:.75rem;font-weight:400;color:#aaa;margin-left:.5rem">how often topics appear in the same post</span>
+      </h3>
+      <div id="cooccurrence-content"></div>
+    </div>
+  </div>
+</div>
+
+<div id="artifacts-section">
+  <div class="artifacts-panel">
+    <h2>Collection Artifacts <span id="artifacts-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div class="artifacts-subtitle">Each artifact collects a category of menopause experiences from r/menopause. The fill level shows its share of total symptom mentions — hover an artifact to see the breakdown.</div>
+    <div id="artifacts-content">
+      <div style="color:#aaa;font-size:.85rem">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div id="symp-section" style="max-width:860px;margin:0 auto .8rem;padding:0 1rem;display:none">
+  <div class="kw-panel">
+    <h2>Most Discussed Symptoms <span id="symp-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <p id="symp-meta" style="font-size:.78rem;color:#888;margin-bottom:.8rem"></p>
+    <div id="symp-bars"></div>
+  </div>
+</div>
+
+<div id="corr-section">
+  <div class="corr-panel">
+    <h2>Keyword Correlation <span id="corr-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div class="corr-tabs">
+      <button class="corr-tab active" onclick="showCorrTab('pairs')">Top Pairs</button>
+      <button class="corr-tab" onclick="showCorrTab('heatmap')">Heatmap</button>
+    </div>
+    <div id="corr-pairs"></div>
+    <div id="corr-heatmap" style="display:none"></div>
+  </div>
+</div>
+
+<div id="keywords-section">
+  <div class="kw-panel">
+    <h2>Top Keywords <span id="kw-source" style="font-size:.75rem;font-weight:400;color:#aaa"></span></h2>
+    <div id="kw-bars"></div>
+  </div>
 </div>
 
 <div class="search-wrap">
@@ -280,11 +912,61 @@
 <script>
   let allPosts = [];
 
+  // ── Browser-side Reddit helpers ───────────────────────────
+  function parseChildren(children) {
+    return children.map(c => {
+      const d = c.data;
+      return {
+        title: d.title || "",
+        selftext: d.selftext || "",
+        score: d.score || 0,
+        num_comments: d.num_comments || 0,
+        url: `https://reddit.com${d.permalink}`,
+        author: d.author || "",
+        created_utc: d.created_utc || 0,
+        upvote_ratio: d.upvote_ratio || 0,
+        flair: d.link_flair_text || "",
+      };
+    });
+  }
+
+  async function fetchRedditDirect(category, limit) {
+    const res = await fetch(
+      `https://www.reddit.com/r/menopause/${category}.json?limit=${limit}&raw_json=1`
+    );
+    if (!res.ok) throw new Error(`Reddit returned ${res.status}`);
+    const data = await res.json();
+    return parseChildren(data.data.children);
+  }
+
+  async function fetchAllPostsBrowser(category, maxPages, onProgress, extraParam = "") {
+    const posts = [];
+    let after = null;
+    for (let page = 0; page < maxPages; page++) {
+      let url = `https://www.reddit.com/r/menopause/${category}.json?limit=100&raw_json=1`;
+      if (extraParam) url += `&${extraParam}`;
+      if (after) url += `&after=${after}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Reddit returned ${res.status}`);
+      const data = await res.json();
+      const children = data.data.children;
+      if (!children.length) break;
+      posts.push(...parseChildren(children));
+      if (onProgress) onProgress(posts.length);
+      after = data.data.after;
+      if (!after) break;
+      if (page < maxPages - 1) await new Promise(r => setTimeout(r, 1000));
+    }
+    return posts;
+  }
+
+  // ── Load posts ────────────────────────────────────────────
   async function loadPosts() {
     const category = document.getElementById("category").value;
     const limit = document.getElementById("limit").value;
     const btn = document.getElementById("loadBtn");
     btn.disabled = true;
+    kwLoaded = false; sympLoaded = false; corrLoaded = false; analyticsLoaded = false; artifactsLoaded = false; categoriesLoaded = false;
 
     document.getElementById("error").style.display = "none";
     document.getElementById("posts").innerHTML = "";
@@ -292,15 +974,24 @@
       `<div class="spinner"></div>Fetching posts from r/menopause…`;
 
     try {
-      const res = await fetch(`/api/posts?category=${category}&limit=${limit}`);
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error);
-      allPosts = data.posts;
-      document.getElementById("mock-banner").style.display =
-        data.source === "mock" ? "block" : "none";
+      // Try browser-side first — no cloud-IP blocking
+      const posts = await fetchRedditDirect(category, limit);
+      allPosts = posts;
+      document.getElementById("mock-banner").style.display = "none";
       renderPosts(allPosts);
-    } catch (e) {
-      showError(e.message);
+    } catch (_) {
+      // Fall back to server-side (may return mock data if Render is blocked)
+      try {
+        const res = await fetch(`/api/posts?category=${category}&limit=${limit}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+        allPosts = data.posts;
+        document.getElementById("mock-banner").style.display =
+          data.source === "mock" ? "block" : "none";
+        renderPosts(allPosts);
+      } catch (e) {
+        showError(e.message);
+      }
     } finally {
       btn.disabled = false;
       document.getElementById("status").innerHTML = "";
@@ -326,14 +1017,26 @@
     container.innerHTML = posts.map((p, i) => postCard(p, i)).join("");
   }
 
+  function timeAgo(utc) {
+    if (!utc) return "";
+    const diff = Math.floor(Date.now() / 1000 - utc);
+    if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+    if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+    return Math.floor(diff / 86400) + "d ago";
+  }
+
   function postCard(post, idx) {
     const score = post.score >= 1000
       ? (post.score / 1000).toFixed(1) + "k"
       : post.score;
+    const flair = post.flair
+      ? `<span style="background:#ff45001a;color:#ff4500;border-radius:4px;padding:1px 6px;font-size:.72rem;font-weight:600">${esc(post.flair)}</span>`
+      : "";
     const preview = post.selftext
-      ? `<div class="post-preview">${esc(post.selftext.slice(0, 200))}${post.selftext.length > 200 ? "…" : ""}</div>`
+      ? `<div class="post-preview">${esc(post.selftext)}</div>`
       : "";
     const permalink = post.url.replace("https://reddit.com", "");
+    const pct = post.upvote_ratio ? Math.round(post.upvote_ratio * 100) + "% upvoted" : "";
     return `
       <div class="post-card" id="card-${idx}">
         <div class="post-header" onclick="toggleComments(${idx}, '${escAttr(permalink)}')">
@@ -343,12 +1046,16 @@
           </div>
           <div class="post-body">
             <div class="post-title">
+              ${flair}
               <a href="${escAttr(post.url)}" target="_blank" onclick="event.stopPropagation()">
                 ${esc(post.title)}
               </a>
             </div>
             <div class="post-meta">
+              <span>u/${esc(post.author || "?")}</span>
               <span>💬 ${post.num_comments} comments</span>
+              ${pct ? `<span>${pct}</span>` : ""}
+              ${post.created_utc ? `<span>${timeAgo(post.created_utc)}</span>` : ""}
               <span><a href="${escAttr(post.url)}" target="_blank" onclick="event.stopPropagation()" style="color:#aaa">open ↗</a></span>
             </div>
             ${preview}
@@ -383,17 +1090,866 @@
       if (!data.comments.length) {
         panel.innerHTML = `<div class="no-comments">No comments yet.</div>`;
       } else {
-        panel.innerHTML = data.comments.map((c, i) =>
-          `<div class="comment">
-            <div class="comment-num">Comment ${i + 1}</div>
-            ${esc(c)}
-          </div>`
-        ).join("");
+        panel.innerHTML = data.comments.map((c) => {
+          const body = typeof c === "string" ? c : c.body;
+          const author = typeof c === "object" ? c.author : "";
+          const score = typeof c === "object" ? c.score : null;
+          return `<div class="comment">
+            <div class="comment-num">
+              ${author ? `u/${esc(author)}` : ""}
+              ${score !== null ? `· ${score} pts` : ""}
+            </div>
+            ${esc(body)}
+          </div>`;
+        }).join("");
       }
       panel.dataset.loaded = "1";
     } catch (e) {
       panel.innerHTML = `<div class="no-comments" style="color:#c0392b">Failed to load comments: ${esc(e.message)}</div>`;
     }
+  }
+
+  // ── Symptoms ─────────────────────────────────────────────
+  let sympLoaded = false;
+
+  async function toggleSymptoms() {
+    const section = document.getElementById("symp-section");
+    const btn = document.getElementById("sympBtn");
+    if (section.style.display !== "none") {
+      section.style.display = "none";
+      btn.textContent = "Show Symptoms";
+      return;
+    }
+    section.style.display = "block";
+    btn.textContent = "Hide Symptoms";
+    if (sympLoaded) return;
+
+    const category = document.getElementById("category").value;
+    document.getElementById("symp-bars").innerHTML =
+      `<div style="color:#aaa;font-size:.85rem">Fetching posts from Reddit… (0)</div>`;
+
+    try {
+      // Fetch up to 500 posts directly from user's browser
+      const posts = await fetchAllPostsBrowser(category, 5, (n) => {
+        document.getElementById("symp-bars").innerHTML =
+          `<div style="color:#aaa;font-size:.85rem">Fetching posts from Reddit… (${n})</div>`;
+      });
+
+      document.getElementById("symp-bars").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">Analysing ${posts.length} posts…</div>`;
+
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "symptoms", posts }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "analysis failed");
+
+      document.getElementById("symp-source").textContent = `(live — ${data.total_posts} posts)`;
+      document.getElementById("symp-meta").textContent =
+        `Across ${data.total_posts} posts — showing total mentions and number of posts each symptom appears in.`;
+      renderSymptoms(data.symptoms);
+      sympLoaded = true;
+    } catch (e) {
+      // Fall back to server-side
+      try {
+        const res = await fetch(`/api/symptoms?category=${category}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        document.getElementById("symp-source").textContent =
+          data.source === "mock" ? "(demo data)" : "(live data)";
+        document.getElementById("symp-meta").textContent =
+          `Across ${data.total_posts} posts — showing total mentions and number of posts each symptom appears in.`;
+        renderSymptoms(data.symptoms);
+        sympLoaded = true;
+      } catch (e2) {
+        document.getElementById("symp-bars").innerHTML =
+          `<div style="color:#c0392b;font-size:.85rem">Failed to load symptoms.</div>`;
+      }
+    }
+  }
+
+  function renderSymptoms(symptoms) {
+    if (!symptoms.length) {
+      document.getElementById("symp-bars").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">No symptoms detected.</div>`;
+      return;
+    }
+    const maxMentions = symptoms[0].mentions;
+    document.getElementById("symp-bars").innerHTML = symptoms.map(s => `
+      <div class="kw-bar-row">
+        <span class="kw-label">${esc(s.symptom)}</span>
+        <div class="kw-bar-wrap">
+          <div class="kw-bar" style="width:${Math.round(s.mentions / maxMentions * 100)}%"></div>
+        </div>
+        <span class="kw-count" style="min-width:80px">
+          ${s.mentions} mention${s.mentions !== 1 ? "s" : ""}
+          <span style="color:#bbb;font-size:.68rem">(${s.posts} post${s.posts !== 1 ? "s" : ""})</span>
+        </span>
+      </div>`).join("");
+  }
+
+  // ── Correlation ──────────────────────────────────────────
+  let corrLoaded = false;
+  let corrData = null;
+  let activeCorrTab = "pairs";
+
+  async function toggleCorrelation() {
+    const section = document.getElementById("corr-section");
+    const btn = document.getElementById("corrBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Show Correlation";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Correlation";
+    if (corrLoaded) return;
+
+    const category = document.getElementById("category").value;
+    document.getElementById("corr-pairs").innerHTML =
+      `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+
+    // Use already-loaded posts if available, otherwise fetch a page
+    let posts = allPosts.length ? allPosts : [];
+    if (!posts.length) {
+      try { posts = await fetchRedditDirect(category, 100); } catch (_) {}
+    }
+
+    try {
+      if (posts.length) {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "correlation", posts, top: 20 }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        corrData = data;
+        document.getElementById("corr-source").textContent = "(live data)";
+        renderCorrPairs(data.pairs);
+        renderHeatmap(data.keywords, data.matrix);
+        corrLoaded = true;
+      } else {
+        throw new Error("no posts");
+      }
+    } catch (_) {
+      // Fall back to server-side
+      try {
+        const limit = document.getElementById("limit").value;
+        const res = await fetch(`/api/correlation?category=${category}&limit=${limit}&top=20`);
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        corrData = data;
+        document.getElementById("corr-source").textContent =
+          data.source === "mock" ? "(demo data)" : "(live data)";
+        renderCorrPairs(data.pairs);
+        renderHeatmap(data.keywords, data.matrix);
+        corrLoaded = true;
+      } catch (e) {
+        document.getElementById("corr-pairs").innerHTML =
+          `<div style="color:#c0392b;font-size:.85rem">Failed to load correlation data.</div>`;
+      }
+    }
+  }
+
+  function showCorrTab(tab) {
+    activeCorrTab = tab;
+    document.querySelectorAll(".corr-tab").forEach((el, i) => {
+      el.classList.toggle("active", (i === 0 && tab === "pairs") || (i === 1 && tab === "heatmap"));
+    });
+    document.getElementById("corr-pairs").style.display = tab === "pairs" ? "block" : "none";
+    document.getElementById("corr-heatmap").style.display = tab === "heatmap" ? "block" : "none";
+  }
+
+  function renderCorrPairs(pairs) {
+    if (!pairs.length) {
+      document.getElementById("corr-pairs").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">No correlated keyword pairs found.</div>`;
+      return;
+    }
+    const maxAbs = Math.abs(pairs[0].r);
+    document.getElementById("corr-pairs").innerHTML = pairs.slice(0, 30).map(p => {
+      const pct = Math.round(Math.abs(p.r) / maxAbs * 100);
+      const barColor = p.r >= 0 ? "#6c63ff" : "#ff4500";
+      const sign = p.r >= 0 ? "+" : "";
+      return `
+      <div class="pair-row">
+        <span class="pair-words">${esc(p.word_a)} &amp; ${esc(p.word_b)}</span>
+        <div class="pair-bar-wrap">
+          <div class="pair-bar" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <span class="pair-score" style="color:${barColor}">${sign}${p.r.toFixed(3)}</span>
+      </div>`;
+    }).join("");
+  }
+
+  function renderHeatmap(keywords, matrix) {
+    const n = keywords.length;
+    // diverging scale: blue for positive r, red for negative r
+    function cellStyle(r, kw, kwj) {
+      if (r === 1.0) return `style="background:#e8e8ff" title="${esc(kw)}"`;
+      const abs = Math.abs(r);
+      const intensity = Math.round(abs * 200);
+      const bg = r > 0
+        ? `rgb(${255-intensity},${255-intensity},255)`
+        : `rgb(255,${255-intensity},${255-intensity})`;
+      const textColor = abs > 0.5 ? (r > 0 ? "#3333cc" : "#cc0000") : "#555";
+      return `style="background:${bg};color:${textColor}" title="${esc(kw)} & ${esc(kwj)}: r=${r.toFixed(3)}"`;
+    }
+
+    const headerRow = `<tr>
+      <th></th>
+      ${keywords.map(kw => `<th style="transform:rotate(-55deg);transform-origin:bottom left;height:70px;vertical-align:bottom;padding-bottom:2px">${esc(kw)}</th>`).join("")}
+    </tr>`;
+
+    const rows = keywords.map((kw, i) => {
+      const cells = matrix[i].map((val, j) =>
+        `<td ${cellStyle(val, kw, keywords[j])}>${i !== j && val !== 0 ? val.toFixed(2) : ""}</td>`
+      ).join("");
+      return `<tr><th style="text-align:right;padding-right:4px">${esc(kw)}</th>${cells}</tr>`;
+    }).join("");
+
+    document.getElementById("corr-heatmap").innerHTML =
+      `<div class="heatmap-wrap"><table class="heatmap-table">${headerRow}${rows}</table></div>
+       <div style="font-size:.75rem;color:#aaa;margin-top:.5rem">
+         Pearson r between keyword frequency vectors across posts.
+         <span style="color:#3333cc">Blue = positive</span> &nbsp;
+         <span style="color:#cc0000">Red = negative</span> correlation.
+       </div>`;
+  }
+
+  let kwLoaded = false;
+
+  async function toggleKeywords() {
+    const section = document.getElementById("keywords-section");
+    const btn = document.getElementById("kwBtn");
+    const isOpen = section.classList.contains("open");
+    if (isOpen) {
+      section.classList.remove("open");
+      btn.textContent = "Show Keywords";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Keywords";
+    if (kwLoaded) return;
+
+    const category = document.getElementById("category").value;
+    document.getElementById("kw-bars").innerHTML =
+      `<div style="color:#aaa;font-size:.85rem">Loading…</div>`;
+
+    // Use already-loaded posts if available
+    let posts = allPosts.length ? allPosts : [];
+    if (!posts.length) {
+      try { posts = await fetchRedditDirect(category, 100); } catch (_) {}
+    }
+
+    try {
+      if (posts.length) {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "keywords", posts, top: 30 }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        renderKeywords(data.keywords, "live");
+        kwLoaded = true;
+      } else {
+        throw new Error("no posts");
+      }
+    } catch (_) {
+      // Fall back to server-side
+      try {
+        const limit = document.getElementById("limit").value;
+        const res = await fetch(`/api/keywords?category=${category}&limit=${limit}&top=30`);
+        const data = await res.json();
+        if (!data.ok) throw new Error("failed");
+        renderKeywords(data.keywords, data.source);
+        kwLoaded = true;
+      } catch (e) {
+        document.getElementById("kw-bars").innerHTML =
+          `<div style="color:#c0392b;font-size:.85rem">Failed to load keywords.</div>`;
+      }
+    }
+  }
+
+  function renderKeywords(keywords, source) {
+    document.getElementById("kw-source").textContent =
+      source === "mock" ? "(demo data)" : "(live data)";
+    if (!keywords.length) {
+      document.getElementById("kw-bars").innerHTML =
+        `<div style="color:#aaa;font-size:.85rem">No keywords found.</div>`;
+      return;
+    }
+    const max = keywords[0].count;
+    document.getElementById("kw-bars").innerHTML = keywords.map(k => `
+      <div class="kw-bar-row">
+        <span class="kw-label">${esc(k.word)}</span>
+        <div class="kw-bar-wrap">
+          <div class="kw-bar" style="width:${Math.round(k.count / max * 100)}%"></div>
+        </div>
+        <span class="kw-count">${k.count}</span>
+      </div>`).join("");
+  }
+
+  // ── Analytics ─────────────────────────────────────────────
+  let analyticsLoaded = false;
+
+  async function toggleAnalytics() {
+    const section = document.getElementById("analytics-section");
+    const btn = document.getElementById("analyticsBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Show Analytics";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Analytics";
+    if (analyticsLoaded) return;
+
+    const el = document.getElementById("analytics-content");
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (0)</div>`;
+
+    // Fetch top?t=all page by page — keep whatever succeeds, stop on first failure
+    let posts = [];
+    let after = null;
+    for (let page = 0; page < 10; page++) {
+      try {
+        let url = `https://www.reddit.com/r/menopause/top.json?limit=100&t=all&raw_json=1`;
+        if (after) url += `&after=${after}`;
+        const res = await fetch(url);
+        if (!res.ok) break;
+        const data = await res.json();
+        const children = data.data.children;
+        if (!children.length) break;
+        posts.push(...parseChildren(children));
+        el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (${posts.length})</div>`;
+        after = data.data.after;
+        if (!after) break;
+        if (page < 9) await new Promise(r => setTimeout(r, 1000));
+      } catch (_) {
+        break; // keep what we have, stop paginating
+      }
+    }
+
+    if (!posts.length) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;
+      return;
+    }
+
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Computing analytics for ${posts.length} posts…</div>`;
+    document.getElementById("analytics-source").textContent = `(${posts.length} all-time top posts)`;
+    try {
+      renderAnalytics(posts);
+      analyticsLoaded = true;
+    } catch (err) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Render error: ${err.message}</div>`;
+      console.error("Analytics error:", err);
+    }
+  }
+
+  function renderAnalytics(posts) {
+    const el = document.getElementById("analytics-content");
+    if (!posts.length) {
+      el.innerHTML = `<div style="color:#aaa;font-size:.85rem">No posts to analyse.</div>`;
+      return;
+    }
+
+    // Summary stats using reduce (safe for large arrays)
+    const totalScore = posts.reduce((s, p) => s + (p.score || 0), 0);
+    const totalComments = posts.reduce((s, p) => s + (p.num_comments || 0), 0);
+    const avgScore = Math.round(totalScore / posts.length);
+    const avgComments = Math.round(totalComments / posts.length);
+
+    const timestamps = posts.map(p => p.created_utc).filter(t => t > 0);
+    const oldest = timestamps.length ? timestamps.reduce((a, b) => a < b ? a : b) : 0;
+    const newest = timestamps.length ? timestamps.reduce((a, b) => a > b ? a : b) : 0;
+    const spanDays = oldest ? (newest - oldest) / 86400 : 0;
+    const allTime = spanDays > 180;
+
+    let postsPerDay = "—", postsPerWeek = "—", dateRange = "—";
+    if (spanDays > 0) {
+      postsPerDay = (posts.length / spanDays).toFixed(1);
+      postsPerWeek = Math.round(posts.length / spanDays * 7);
+      const fmt = utc => new Date(utc * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      dateRange = `${fmt(oldest)} – ${fmt(newest)}`;
+    }
+
+    // Yearly bucketing (for all-time view)
+    const yearMap = {};
+    timestamps.forEach(t => {
+      const yr = new Date(t * 1000).getUTCFullYear();
+      yearMap[yr] = (yearMap[yr] || 0) + 1;
+    });
+    const years = Object.keys(yearMap).sort();
+    const yearMax = years.reduce((m, y) => Math.max(m, yearMap[y]), 1);
+
+    // Weekly bucketing (for recent view)
+    function mondayKey(utc) {
+      const d = new Date(utc * 1000);
+      const dow = d.getUTCDay();
+      const daysBack = dow === 0 ? 6 : dow - 1;
+      const mon = new Date((utc - daysBack * 86400) * 1000);
+      return `${mon.getUTCFullYear()}-${String(mon.getUTCMonth()+1).padStart(2,"0")}-${String(mon.getUTCDate()).padStart(2,"0")}`;
+    }
+    function fmtMonday(key) {
+      const [yr, mo, dy] = key.split("-");
+      return new Date(+yr, +mo - 1, +dy).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+    const weekMap = {};
+    timestamps.forEach(t => { const k = mondayKey(t); weekMap[k] = (weekMap[k] || 0) + 1; });
+    const weeks = Object.keys(weekMap).sort().slice(-12);
+    const weekMax = weeks.reduce((m, w) => Math.max(m, weekMap[w]), 1);
+
+    // Day-of-week
+    const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dayCounts = new Array(7).fill(0);
+    timestamps.forEach(t => { dayCounts[new Date(t * 1000).getUTCDay()]++; });
+    const dayMax = dayCounts.reduce((a, b) => Math.max(a, b), 1);
+    const busiest = DAYS[dayCounts.indexOf(dayCounts.reduce((a, b) => Math.max(a, b), 0))];
+
+    const timeChart = allTime ? `
+      <div class="analytics-chart-title">Top posts by year (all time)</div>
+      ${years.length ? years.map(yr => `
+        <div class="week-row">
+          <span class="week-label">${yr}</span>
+          <div class="week-bar-wrap">
+            <div class="week-bar" style="width:${Math.round(yearMap[yr] / yearMax * 100)}%"></div>
+          </div>
+          <span class="week-count">${yearMap[yr]}</span>
+        </div>`).join("") : `<div style="color:#aaa;font-size:.82rem">No timestamp data.</div>`}
+    ` : `
+      <div class="analytics-chart-title">Posts per week (last ${weeks.length} weeks)</div>
+      ${weeks.length ? weeks.map(wk => `
+        <div class="week-row">
+          <span class="week-label">${fmtMonday(wk)}</span>
+          <div class="week-bar-wrap">
+            <div class="week-bar" style="width:${Math.round(weekMap[wk] / weekMax * 100)}%"></div>
+          </div>
+          <span class="week-count">${weekMap[wk]}</span>
+        </div>`).join("") : `<div style="color:#aaa;font-size:.82rem">No timestamp data.</div>`}
+    `;
+
+    el.innerHTML = `
+      <div class="analytics-summary">
+        <div class="analytics-stat"><span class="aval">${posts.length}</span><span class="albl">Posts analysed</span></div>
+        <div class="analytics-stat"><span class="aval">${postsPerWeek}</span><span class="albl">Posts / week</span></div>
+        <div class="analytics-stat"><span class="aval">${postsPerDay}</span><span class="albl">Posts / day</span></div>
+        <div class="analytics-stat"><span class="aval">${avgScore}</span><span class="albl">Avg score</span></div>
+        <div class="analytics-stat"><span class="aval">${avgComments}</span><span class="albl">Avg comments</span></div>
+        <div class="analytics-stat"><span class="aval">${busiest}</span><span class="albl">Busiest day</span></div>
+      </div>
+      <div style="font-size:.72rem;color:#aaa;margin-bottom:1rem">Date range: ${dateRange}</div>
+      ${timeChart}
+      <div class="analytics-chart-title" style="margin-top:1.1rem">Posts by day of week</div>
+      <div class="day-grid">
+        ${DAYS.map((d, i) => `
+          <div class="day-cell">
+            <div class="day-bar-wrap">
+              <div class="day-bar" style="height:${Math.round(dayCounts[i] / dayMax * 50)}px"></div>
+            </div>
+            <span class="day-name">${d}</span>
+            <span class="day-n">${dayCounts[i]}</span>
+          </div>`).join("")}
+      </div>`;
+  }
+
+  // ── Browse by Topic ───────────────────────────────────────
+  let categoriesLoaded = false;
+
+  async function toggleCategories() {
+    const section = document.getElementById("categories-section");
+    const btn = document.getElementById("categoriesBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Browse by Topic";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Topics";
+    if (categoriesLoaded) return;
+
+    const el = document.getElementById("categories-content");
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts…</div>`;
+
+    // Fetch top posts via backend (avoids Reddit browser blocks)
+    let posts = [];
+    try {
+      const res = await fetch("/api/top-posts");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "failed");
+      posts = data.posts || [];
+    } catch (_) {}
+
+    if (!posts.length) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;
+      return;
+    }
+
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Classifying ${posts.length} posts…</div>`;
+
+    try {
+      const res = await fetch("/api/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ posts }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "failed");
+      document.getElementById("categories-source").textContent =
+        `(${posts.length} all-time top posts)`;
+      renderCategories(data.categories);
+      categoriesLoaded = true;
+      loadCategoryComments();
+    } catch (e) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Classification failed: ${esc(e.message)}</div>`;
+      return;
+    }
+
+    // Co-occurrence heatmap — separate try so it can't break the category list
+    try {
+      const res = await fetch("/api/cooccurrence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ posts }),
+      });
+      const cooData = await res.json();
+      if (cooData.ok) renderCooccurrence(cooData);
+    } catch (_) { /* heatmap is optional */ }
+  }
+
+  function toggleCatGroup(id) {
+    const postsEl = document.getElementById(`catposts-${id}`);
+    const chevEl  = document.getElementById(`chev-${id}`);
+    const isOpen  = postsEl.style.display !== "none";
+    postsEl.style.display = isOpen ? "none" : "block";
+    chevEl.classList.toggle("open", !isOpen);
+  }
+
+  function fmtScore(n) {
+    return n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n);
+  }
+
+  function renderCategories(categories) {
+    const el = document.getElementById("categories-content");
+    if (!categories.length) {
+      el.innerHTML = `<div style="color:#aaa;font-size:.85rem">No categories found.</div>`;
+      return;
+    }
+    el.innerHTML = categories.map(cat => {
+      const countCls = cat.count === 0 ? "cat-count zero" : "cat-count";
+      const hitsLabel = cat.total_hits
+        ? `<span style="font-size:.72rem;color:#aaa;margin-left:.3rem">${cat.total_hits.toLocaleString()} hits</span>`
+        : "";
+      const rows = cat.posts.map(p => {
+        const score = fmtScore(p.score || 0);
+        return `<div class="cat-post-row">
+          <span class="cat-post-score">${esc(score)}</span>
+          <a class="cat-post-title" href="${escAttr(p.url)}" target="_blank">${esc(p.title)}</a>
+        </div>`;
+      }).join("");
+      const overflow = cat.count > cat.posts.length
+        ? `<div class="cat-more">+ ${cat.count - cat.posts.length} more posts in this category</div>`
+        : "";
+      return `<div class="cat-group">
+        <div class="cat-header" onclick="toggleCatGroup('${esc(cat.id)}')">
+          <span class="cat-label">${esc(cat.label)}</span>
+          ${hitsLabel}
+          <span class="${countCls}">${cat.count} posts</span>
+          <span class="cat-chevron" id="chev-${esc(cat.id)}">▼</span>
+        </div>
+        <div class="cat-posts" id="catposts-${esc(cat.id)}" style="display:none">
+          ${rows}
+          ${overflow}
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function renderCooccurrence({ labels, matrix }) {
+    const n = labels.length;
+    // Short display labels
+    const SHORT = {
+      "HRT & Hormone Therapy":           "HRT",
+      "Symptom Identification":          "Symptoms",
+      "Non-Hormonal Treatments":         "Non-Horm.",
+      "Mental & Cognitive Health":       "Mental",
+      "Medical Access & Care":           "Medical",
+      "Sleep":                           "Sleep",
+      "Sexual Health & Relationships":   "Sexual Hlth",
+      "Body Changes":                    "Body",
+      "Perimenopause & Transition":      "Peri.",
+      "Community Support & Shared Experience": "Community",
+    };
+    const short = labels.map(l => SHORT[l] || l);
+
+    // max off-diagonal value for colour scaling
+    const offVals = [];
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j) offVals.push(matrix[i][j]);
+    const maxOff = Math.max(...offVals, 1);
+
+    function cellBg(val, isDiag) {
+      if (isDiag) return { bg: "#f0f0f0", fg: "#bbb" };
+      if (val === 0) return { bg: "#fafafa", fg: "#ddd" };
+      const t = val / maxOff;
+      // warm ramp: white → light orange → deep orange
+      const r = Math.round(255);
+      const g = Math.round(255 - t * (255 - 69));
+      const b = Math.round(255 - t * 255);
+      const fg = t > 0.5 ? "#fff" : "#333";
+      return { bg: `rgb(${r},${g},${b})`, fg };
+    }
+
+    let html = `<div style="overflow-x:auto"><table class="coo-table"><thead><tr><th></th>`;
+    for (let j = 0; j < n; j++) {
+      html += `<th title="${esc(labels[j])}">${esc(short[j])}</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+    for (let i = 0; i < n; i++) {
+      html += `<tr><th title="${esc(labels[i])}">${esc(short[i])}</th>`;
+      for (let j = 0; j < n; j++) {
+        const v = matrix[i][j];
+        const isDiag = i === j;
+        const { bg, fg } = cellBg(v, isDiag);
+        const title = isDiag ? labels[i] : `${labels[i]} ∩ ${labels[j]}: ${v} posts`;
+        html += `<td style="background:${bg};color:${fg}" title="${esc(title)}">${isDiag ? "" : v || ""}</td>`;
+      }
+      html += `</tr>`;
+    }
+    html += `</tbody></table></div>
+    <div style="margin-top:.5rem;font-size:.72rem;color:#aaa">Each cell = number of posts matching both row and column topic simultaneously. Hover for details.</div>`;
+
+    document.getElementById("cooccurrence-content").innerHTML = html;
+    document.getElementById("cooccurrence-section").style.display = "block";
+  }
+
+  // ── Category Comments ─────────────────────────────────────
+  async function loadCategoryComments() {
+    try {
+      const res = await fetch("/api/analyze-comments");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.ok) return;
+      injectComments(data.categories);
+    } catch (_) {}
+  }
+
+  function injectComments(categories) {
+    for (const cat of categories) {
+      if (!cat.top_comments || !cat.top_comments.length) continue;
+      const el = document.getElementById(`catposts-${cat.id}`);
+      if (!el) continue;
+      const items = cat.top_comments.slice(0, 5).map(c => {
+        const score = fmtScore(c.score || 0);
+        return `<div class="cat-comment-item">
+          <div class="cat-comment-body">${esc(c.body)}</div>
+          <div class="cat-comment-meta">
+            <span class="cat-comment-score">▲ ${esc(score)}</span>
+            <span>u/${esc(c.author)}</span>
+            <a class="cat-comment-link" href="${escAttr(c.post_url)}" target="_blank">${esc(c.post_title)}</a>
+          </div>
+        </div>`;
+      }).join("");
+      el.insertAdjacentHTML("beforeend",
+        `<div class="cat-comments-header">Top Comments</div>${items}`);
+    }
+  }
+
+  // ── Collection Artifacts ──────────────────────────────────
+  const ARTIFACT_DEFS = [
+    {
+      id: "tampon",
+      label: "Tampon",
+      desc: "Vasomotor & Physical",
+      color: "#C41E3A",
+      symptoms: ["hot flashes","night sweats","vaginal dryness","irregular periods","urinary issues","bloating"],
+    },
+    {
+      id: "pad",
+      label: "Pad",
+      desc: "Mental & Emotional",
+      color: "#8B1A3A",
+      symptoms: ["brain fog","insomnia","anxiety","depression","mood swings","fatigue","memory loss","headaches","low libido"],
+    },
+    {
+      id: "cup",
+      label: "Menstrual Cup",
+      desc: "Systemic & Body",
+      color: "#5C0E1F",
+      symptoms: ["joint pain","weight gain","heart palpitations","skin changes","hair loss"],
+    },
+  ];
+
+  let artifactsLoaded = false;
+
+  // Draw a tampon: tall pill/capsule body with a string at the bottom
+  function drawTampon(pct, color) {
+    const uid = "t" + Math.random().toString(36).slice(2, 8);
+    const bY = 15, bH = 185;
+    const fillYn = Math.max(bY, bY + bH * (1 - pct));
+    const fillY = fillYn.toFixed(1);
+    const hasLine = pct > 0.04 && pct < 0.97;
+    const levelLine = hasLine
+      ? `<line x1="34" y1="${fillY}" x2="66" y2="${fillY}" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/>`
+      : "";
+    return `<svg viewBox="0 0 100 260" width="80" height="208">
+      <defs><clipPath id="${uid}"><rect x="30" y="${bY}" width="40" height="${bH}" rx="20" ry="20"/></clipPath></defs>
+      <rect x="30" y="${bY}" width="40" height="${bH}" rx="20" ry="20" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="30" y="${fillY}" width="40" height="${bY + bH - fillYn + 5}" fill="${color}" opacity="0.82" clip-path="url(#${uid})"/>
+      ${levelLine}
+      <line x1="50" y1="${bY + bH}" x2="50" y2="245" stroke="${color}" stroke-width="1.5"/>
+      <circle cx="50" cy="247" r="3" fill="${color}"/>
+    </svg>`;
+  }
+
+  // Draw a pad: wide flat body with wings on each side
+  function drawPad(pct, color) {
+    const uid = "p" + Math.random().toString(36).slice(2, 8);
+    const bX = 25, bY = 30, bW = 130, bH = 140;
+    const fillYn = Math.max(bY, bY + bH * (1 - pct));
+    const fillY = fillYn.toFixed(1);
+    const hasLine = pct > 0.04 && pct < 0.97;
+    const levelLine = hasLine
+      ? `<line x1="${bX + 6}" y1="${fillY}" x2="${bX + bW - 6}" y2="${fillY}" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/>`
+      : "";
+    return `<svg viewBox="0 0 180 190" width="160" height="169">
+      <defs><clipPath id="${uid}"><rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="20" ry="20"/></clipPath></defs>
+      <rect x="3"   y="60" width="26" height="72" rx="9" fill="#fdf2f2" stroke="${color}" stroke-width="1.8" opacity="0.85"/>
+      <rect x="151" y="60" width="26" height="72" rx="9" fill="#fdf2f2" stroke="${color}" stroke-width="1.8" opacity="0.85"/>
+      <rect x="3"   y="60" width="26" height="72" rx="9" fill="${color}" opacity="0.22"/>
+      <rect x="151" y="60" width="26" height="72" rx="9" fill="${color}" opacity="0.22"/>
+      <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="20" ry="20" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="${bX}" y="${fillY}" width="${bW}" height="${bY + bH - fillYn + 5}" fill="${color}" opacity="0.82" clip-path="url(#${uid})"/>
+      ${levelLine}
+    </svg>`;
+  }
+
+  // Draw a menstrual cup: tapered trapezoidal body with a rim and stem
+  function drawCup(pct, color) {
+    const uid = "c" + Math.random().toString(36).slice(2, 8);
+    const topY = 40, botY = 192, cupH = botY - topY;
+    const fillYn = Math.max(topY, topY + cupH * (1 - pct));
+    const fillY = fillYn.toFixed(1);
+    const cupPath = `M 22,${topY} L 118,${topY} L 100,${botY - 10} Q 70,${botY + 10} 40,${botY - 10} Z`;
+    let levelLine = "";
+    if (pct > 0.04 && pct < 0.97) {
+      const t = (fillYn - topY) / cupH;
+      const lx = (22 + t * (40 - 22)).toFixed(1);
+      const rx = (118 - t * (118 - 100)).toFixed(1);
+      levelLine = `<line x1="${parseFloat(lx) + 3}" y1="${fillY}" x2="${parseFloat(rx) - 3}" y2="${fillY}" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"/>`;
+    }
+    return `<svg viewBox="0 0 140 260" width="110" height="204">
+      <defs><clipPath id="${uid}"><path d="${cupPath}"/></clipPath></defs>
+      <path d="${cupPath}" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="0" y="${fillY}" width="140" height="${botY - fillYn + 20}" fill="${color}" opacity="0.82" clip-path="url(#${uid})"/>
+      ${levelLine}
+      <ellipse cx="70" cy="${topY}" rx="48" ry="8" fill="#fdf2f2" stroke="${color}" stroke-width="2.5"/>
+      <rect x="64" y="${botY + 9}" width="12" height="30" rx="6" fill="${color}" opacity="0.65"/>
+    </svg>`;
+  }
+
+  async function toggleArtifacts() {
+    const section = document.getElementById("artifacts-section");
+    const btn = document.getElementById("artifactsBtn");
+    if (section.classList.contains("open")) {
+      section.classList.remove("open");
+      btn.textContent = "Show Artifacts";
+      return;
+    }
+    section.classList.add("open");
+    btn.textContent = "Hide Artifacts";
+    if (artifactsLoaded) return;
+
+    const el = document.getElementById("artifacts-content");
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching symptom data…</div>`;
+
+    let posts = allPosts.length ? allPosts : [];
+    if (!posts.length) {
+      try { posts = await fetchAllPostsBrowser("hot", 3, null); } catch (_) {}
+    }
+
+    let symptoms = [];
+    try {
+      if (posts.length) {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "symptoms", posts }),
+        });
+        const data = await res.json();
+        if (data.ok) symptoms = data.symptoms;
+      }
+    } catch (_) {}
+
+    if (!symptoms.length) {
+      try {
+        const res = await fetch("/api/symptoms");
+        const data = await res.json();
+        if (data.ok) symptoms = data.symptoms;
+      } catch (_) {}
+    }
+
+    if (!symptoms.length) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Failed to load symptom data.</div>`;
+      return;
+    }
+
+    document.getElementById("artifacts-source").textContent = `(${posts.length} posts)`;
+    renderArtifacts(symptoms);
+    artifactsLoaded = true;
+  }
+
+  function renderArtifacts(symptoms) {
+    const el = document.getElementById("artifacts-content");
+    const symMap = {};
+    symptoms.forEach(s => { symMap[s.symptom] = s.mentions; });
+
+    const groups = ARTIFACT_DEFS.map(def => ({
+      ...def,
+      mentions: def.symptoms.reduce((sum, sym) => sum + (symMap[sym] || 0), 0),
+    }));
+    const total = groups.reduce((s, g) => s + g.mentions, 0) || 1;
+
+    const artifactsHTML = groups.map(g => {
+      const pct = g.mentions / total;
+      const pctLabel = Math.round(pct * 100) + "%";
+      const svg = g.id === "tampon" ? drawTampon(pct, g.color)
+                : g.id === "pad"    ? drawPad(pct, g.color)
+                :                     drawCup(pct, g.color);
+      const tipLines = g.symptoms
+        .filter(s => symMap[s])
+        .map(s => `${s}: ${symMap[s]}`)
+        .join("\n") || "No data";
+      return `<div class="artifact-item">
+        <div class="artifact-tooltip">${esc(tipLines)}</div>
+        ${svg}
+        <div class="artifact-pct">${pctLabel}</div>
+        <div class="artifact-name">${esc(g.label)}</div>
+        <div class="artifact-desc">${esc(g.desc)}</div>
+        <div class="artifact-count">${g.mentions} mentions</div>
+      </div>`;
+    }).join("");
+
+    const legendHTML = groups.map(g => {
+      const parts = g.symptoms
+        .filter(s => symMap[s])
+        .map(s => `${esc(s)} <span style="color:#bbb">(${symMap[s]})</span>`)
+        .join(" · ") || "<em style='color:#bbb'>no data</em>";
+      return `<div class="legend-row">
+        <div class="legend-dot" style="background:${g.color}"></div>
+        <div class="legend-text"><strong>${esc(g.label)}</strong> — ${parts}</div>
+      </div>`;
+    }).join("");
+
+    el.innerHTML = `
+      <div class="artifacts-row">${artifactsHTML}</div>
+      <div class="artifacts-legend">
+        <h3>Symptom breakdown</h3>
+        ${legendHTML}
+      </div>`;
   }
 
   function showError(msg) {
@@ -410,6 +1966,20 @@
       .replace(/"/g, "&quot;");
   }
   function escAttr(s) { return esc(s); }
+
+  // Load subreddit stats into header
+  (async () => {
+    try {
+      const res = await fetch("/api/stats");
+      const d = await res.json();
+      if (!d.ok) return;
+      document.getElementById("stat-members").textContent =
+        d.subscribers >= 1000 ? (d.subscribers / 1000).toFixed(0) + "k" : d.subscribers;
+      document.getElementById("stat-active").textContent = d.active.toLocaleString();
+      const years = ((Date.now() / 1000 - d.created_utc) / 31536000).toFixed(1);
+      document.getElementById("stat-age").textContent = years;
+    } catch (_) {}
+  })();
 
   // Load on startup
   loadPosts();
