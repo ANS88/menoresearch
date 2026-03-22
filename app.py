@@ -376,6 +376,83 @@ def api_top_posts():
         return jsonify({"ok": False, "error": str(e)}), 502
 
 
+@app.route("/api/analyze-comments")
+def api_analyze_comments():
+    """
+    For each topic category, fetch comments from the top posts in that category
+    and return the 10 highest-upvoted comments per category.
+
+    Query params:
+      pages     - how many pages of top posts to fetch (default 3, max 10)
+      posts_per_cat - how many top posts per category to pull comments from (default 3)
+      comments_per_post - comments fetched per post (default 20)
+    """
+    try:
+        pages = min(int(request.args.get("pages", 3)), 10)
+        posts_per_cat = min(int(request.args.get("posts_per_cat", 3)), 10)
+        comments_per_post = min(int(request.args.get("comments_per_post", 20)), 100)
+    except ValueError:
+        return jsonify({"ok": False, "error": "invalid query params"}), 400
+
+    try:
+        all_posts = get_all_posts(category="top", time_filter="all", max_pages=pages)
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"could not fetch posts: {e}"}), 502
+
+    # Categorise every post
+    def match_categories(p):
+        text = (p.get("title", "") + " " + p.get("selftext", "")).lower()
+        matched = []
+        for cat in POST_CATEGORIES:
+            hits = sum(text.count(pat) for pat in cat["patterns"])
+            if hits > 0:
+                matched.append((cat["id"], hits))
+        return matched
+
+    # Build per-category post lists sorted by score
+    cat_posts = {cat["id"]: [] for cat in POST_CATEGORIES}
+    for p in all_posts:
+        for cat_id, hits in match_categories(p):
+            cat_posts[cat_id].append((p["score"], hits, p))
+    for cat_id in cat_posts:
+        cat_posts[cat_id].sort(key=lambda x: x[0], reverse=True)
+
+    results = []
+    seen_permalinks = set()  # avoid fetching the same post twice across categories
+
+    for cat in POST_CATEGORIES:
+        cat_id = cat["id"]
+        top_posts = [p for _, _, p in cat_posts[cat_id][:posts_per_cat]]
+        all_comments = []
+
+        for p in top_posts:
+            permalink = p["url"].replace("https://reddit.com", "")
+            if permalink in seen_permalinks:
+                # still include previously fetched comments stored on the post
+                continue
+            seen_permalinks.add(permalink)
+            try:
+                comments = get_comments(permalink, limit=comments_per_post)
+                for c in comments:
+                    c["post_title"] = p["title"]
+                    c["post_url"] = p["url"]
+                all_comments.extend(comments)
+            except Exception:
+                pass
+
+        # Sort by score, take top 10
+        top_comments = sorted(all_comments, key=lambda c: c.get("score", 0), reverse=True)[:10]
+
+        results.append({
+            "id": cat_id,
+            "label": cat["label"],
+            "post_count": len(top_posts),
+            "top_comments": top_comments,
+        })
+
+    return jsonify({"ok": True, "categories": results, "total_posts_fetched": len(all_posts)})
+
+
 @app.route("/api/categorize", methods=["POST"])
 def api_categorize():
     """Assign posts to topic categories based on keyword matching."""
