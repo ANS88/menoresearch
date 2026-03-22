@@ -648,6 +648,42 @@
       color: #aaa;
       padding: .35rem 0 0;
     }
+    .cat-comments-header {
+      font-size: .72rem;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin: .9rem 0 .4rem;
+    }
+    .cat-comment-item {
+      border-left: 2px solid #ff4500;
+      padding: .35rem .55rem;
+      margin-bottom: .35rem;
+      background: #fafafa;
+      border-radius: 0 4px 4px 0;
+    }
+    .cat-comment-body {
+      font-size: .8rem;
+      color: #333;
+      line-height: 1.45;
+      margin-bottom: .2rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .cat-comment-meta {
+      font-size: .7rem;
+      color: #aaa;
+      display: flex;
+      gap: .55rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .cat-comment-score { color: #ff4500; font-weight: 700; }
+    .cat-comment-link { color: #aaa; text-decoration: none; }
+    .cat-comment-link:hover { color: #ff4500; text-decoration: underline; }
 
     /* ── Artifacts section ── */
     #artifacts-section {
@@ -1567,6 +1603,7 @@
         `(${posts.length} all-time top posts)`;
       renderCategories(data.categories);
       categoriesLoaded = true;
+      loadCategoryComments();
     } catch (e) {
       el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Classification failed: ${esc(e.message)}</div>`;
       return;
@@ -1687,6 +1724,38 @@
 
     document.getElementById("cooccurrence-content").innerHTML = html;
     document.getElementById("cooccurrence-section").style.display = "block";
+  }
+
+  // ── Category Comments ─────────────────────────────────────
+  async function loadCategoryComments() {
+    try {
+      const res = await fetch("/api/analyze-comments");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.ok) return;
+      injectComments(data.categories);
+    } catch (_) {}
+  }
+
+  function injectComments(categories) {
+    for (const cat of categories) {
+      if (!cat.top_comments || !cat.top_comments.length) continue;
+      const el = document.getElementById(`catposts-${cat.id}`);
+      if (!el) continue;
+      const items = cat.top_comments.slice(0, 5).map(c => {
+        const score = fmtScore(c.score || 0);
+        return `<div class="cat-comment-item">
+          <div class="cat-comment-body">${esc(c.body)}</div>
+          <div class="cat-comment-meta">
+            <span class="cat-comment-score">▲ ${esc(score)}</span>
+            <span>u/${esc(c.author)}</span>
+            <a class="cat-comment-link" href="${escAttr(c.post_url)}" target="_blank">${esc(c.post_title)}</a>
+          </div>
+        </div>`;
+      }).join("");
+      el.insertAdjacentHTML("beforeend",
+        `<div class="cat-comments-header">Top Comments</div>${items}`);
+    }
   }
 
   // ── Collection Artifacts ──────────────────────────────────
