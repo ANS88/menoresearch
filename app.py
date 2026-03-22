@@ -366,6 +366,16 @@ POST_CATEGORIES = [
 ]
 
 
+@app.route("/api/top-posts")
+def api_top_posts():
+    """Fetch all-time top posts from r/menopause via the backend (avoids browser CORS/rate-limit issues)."""
+    try:
+        posts = get_all_posts(category="top", time_filter="all", max_pages=10)
+        return jsonify({"ok": True, "posts": posts})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 502
+
+
 @app.route("/api/categorize", methods=["POST"])
 def api_categorize():
     """Assign posts to topic categories based on keyword matching."""

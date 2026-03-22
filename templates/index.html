@@ -1536,27 +1536,17 @@
     if (categoriesLoaded) return;
 
     const el = document.getElementById("categories-content");
-    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (0)</div>`;
+    el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts…</div>`;
 
-    // Fetch top?t=all, page by page, preserve partial results on error
+    // Fetch top posts via backend (avoids Reddit browser blocks)
     let posts = [];
-    let after = null;
-    for (let page = 0; page < 10; page++) {
-      try {
-        let url = `https://www.reddit.com/r/menopause/top.json?limit=100&t=all&raw_json=1`;
-        if (after) url += `&after=${after}`;
-        const res = await fetch(url);
-        if (!res.ok) break;
-        const data = await res.json();
-        const children = data.data.children;
-        if (!children.length) break;
-        posts.push(...parseChildren(children));
-        el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts… (${posts.length})</div>`;
-        after = data.data.after;
-        if (!after) break;
-        if (page < 9) await new Promise(r => setTimeout(r, 1000));
-      } catch (_) { break; }
-    }
+    try {
+      const res = await fetch("/api/top-posts");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "failed");
+      posts = data.posts || [];
+    } catch (_) {}
 
     if (!posts.length) {
       el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;

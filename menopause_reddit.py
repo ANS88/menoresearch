@@ -74,12 +74,14 @@ def get_posts(subreddit="menopause", category="hot", limit=25):
     return _parse_posts(data["data"]["children"])[:limit]
 
 
-def get_all_posts(subreddit="menopause", category="hot", max_pages=10):
+def get_all_posts(subreddit="menopause", category="hot", max_pages=10, time_filter=None):
     """Paginate through up to max_pages * 100 posts."""
     results = []
     after = None
     for _ in range(max_pages):
         url = f"https://www.reddit.com/r/{subreddit}/{category}.json?limit=100"
+        if time_filter:
+            url += f"&t={time_filter}"
         if after:
             url += f"&after={after}"
         data = fetch(url)
