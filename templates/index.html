@@ -2012,6 +2012,8 @@
 
   // Cache for already-fetched summaries keyed by post URL
   const _summaryCache = {};
+  // Post data lookup: sid -> { url, title, selftext }
+  const _postDataMap = {};
 
   function renderTopicTables(categories) {
     const el = document.getElementById("topic-tables-content");
@@ -2026,16 +2028,15 @@
         const score = fmtScore(p.score || 0);
         const comments = fmtScore(p.num_comments || 0);
         const sid = `sum-${cat.id}-${i}`;
+        // Store post data in JS map — avoids all inline escaping problems
+        _postDataMap[sid] = { url: p.url || "", title: p.title || "", selftext: p.selftext || "" };
         const postRow = `<tr>
           <td class="tt-rank">${i + 1}</td>
           <td><a class="tt-title" href="${escAttr(p.url)}" target="_blank">${esc(p.title)}</a></td>
           <td class="tt-score">${esc(score)}</td>
           <td class="tt-comments">💬 ${esc(comments)}</td>
           <td style="text-align:right;width:90px">
-            <button class="tt-summary-btn" id="btn-${sid}"
-              onclick="togglePostSummary('${sid}','${escAttr(p.url)}','${escAttr(p.title)}',${JSON.stringify(p.selftext||'').replace(/'/g,"&#39;")})">
-              ▾ Summary
-            </button>
+            <button class="tt-summary-btn" id="btn-${sid}" onclick="togglePostSummary('${sid}')">▾ Summary</button>
           </td>
         </tr>`;
         const summaryRow = `<tr class="tt-summary-row">
@@ -2066,10 +2067,10 @@
     }).join("");
   }
 
-  async function togglePostSummary(sid, postUrl, title, selftext) {
+  async function togglePostSummary(sid) {
     const panel = document.getElementById(sid);
     const btn   = document.getElementById("btn-" + sid);
-    if (!panel) return;
+    if (!panel || !btn) return;
 
     const isOpen = panel.classList.contains("open");
     if (isOpen) {
@@ -2083,6 +2084,9 @@
     btn.classList.add("open");
     btn.textContent = "▴ Summary";
 
+    const post = _postDataMap[sid] || {};
+    const postUrl = post.url || "";
+
     // Return cached result immediately
     if (_summaryCache[postUrl]) {
       renderSummaryPanel(panel, _summaryCache[postUrl]);
@@ -2091,14 +2095,14 @@
 
     panel.innerHTML = `<div style="color:#aaa;font-size:.8rem;padding:.5rem;grid-column:1/-1">Loading summary…</div>`;
 
-    // Derive permalink from URL: strip domain, strip trailing slash
+    // Derive permalink from URL: strip domain, ensure trailing slash
     const permalink = postUrl.replace("https://reddit.com", "").replace(/\/?$/, "/");
 
     try {
       const res = await fetch("/api/post-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ permalink, title, selftext }),
+        body: JSON.stringify({ permalink, title: post.title, selftext: post.selftext }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "failed");
