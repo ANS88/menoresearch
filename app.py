@@ -371,9 +371,11 @@ def api_top_posts():
     """Fetch all-time top posts from r/menopause via the backend (avoids browser CORS/rate-limit issues)."""
     try:
         posts = get_all_posts(category="top", time_filter="all", max_pages=10)
-        return jsonify({"ok": True, "posts": posts})
+        if posts:
+            return jsonify({"ok": True, "posts": posts, "source": "live"})
+        raise ValueError("no posts returned")
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 502
+        return jsonify({"ok": True, "posts": MOCK_POSTS, "source": "mock", "warning": str(e)})
 
 
 @app.route("/api/analyze-comments")

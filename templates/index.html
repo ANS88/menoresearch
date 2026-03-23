@@ -1755,16 +1755,21 @@
 
     // Fetch top posts via backend (avoids Reddit browser blocks)
     let posts = [];
+    let isMock = false;
     try {
       const res = await fetch("/api/top-posts");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "failed");
       posts = data.posts || [];
-    } catch (_) {}
+      isMock = data.source === "mock";
+    } catch (e) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not reach Reddit: ${esc(e.message)}</div>`;
+      return;
+    }
 
     if (!posts.length) {
-      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">No posts returned. Try again in a moment.</div>`;
       return;
     }
 
@@ -1778,8 +1783,9 @@
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "failed");
+      const mockNote = isMock ? " · demo data (Reddit unreachable)" : "";
       document.getElementById("categories-source").textContent =
-        `(${posts.length} all-time top posts)`;
+        `(${posts.length} posts${mockNote})`;
       cachedCategoryData = { categories: data.categories, postCount: posts.length };
       renderCategories(data.categories);
       categoriesLoaded = true;
@@ -1966,16 +1972,21 @@
 
     el.innerHTML = `<div style="color:#aaa;font-size:.85rem">Fetching all-time top posts…</div>`;
     let posts = [];
+    let isMock = false;
     try {
       const res = await fetch("/api/top-posts");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "failed");
       posts = data.posts || [];
-    } catch (_) {}
+      isMock = data.source === "mock";
+    } catch (e) {
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not reach Reddit: ${esc(e.message)}</div>`;
+      return;
+    }
 
     if (!posts.length) {
-      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Could not fetch Reddit data. Try again in a moment.</div>`;
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">No posts returned. Try again in a moment.</div>`;
       return;
     }
 
@@ -1989,12 +2000,13 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "failed");
       cachedCategoryData = { categories: data.categories, postCount: posts.length };
+      const mockNote = isMock ? " · demo data (Reddit unreachable)" : "";
       document.getElementById("topic-tables-source").textContent =
-        `(${posts.length} all-time top posts)`;
+        `(${posts.length} posts${mockNote})`;
       renderTopicTables(data.categories);
       topicTablesLoaded = true;
     } catch (e) {
-      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Failed: ${esc(e.message)}</div>`;
+      el.innerHTML = `<div style="color:#c0392b;font-size:.85rem">Classification failed: ${esc(e.message)}</div>`;
     }
   }
 
