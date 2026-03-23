@@ -780,6 +780,77 @@
       color: #888;
       white-space: nowrap;
     }
+    .tt-summary-btn {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: .72rem;
+      color: #888;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tt-summary-btn:hover { border-color: #ff4500; color: #ff4500; }
+    .tt-summary-btn.open { background: #fff5f2; border-color: #ff4500; color: #ff4500; }
+    .tt-summary-row td { padding: 0 !important; border-bottom: 2px solid #f0f0f0 !important; }
+    .tt-summary-inner {
+      display: none;
+      padding: .7rem 1rem .8rem;
+      background: #fafafa;
+      gap: .8rem;
+    }
+    .tt-summary-inner.open {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.4fr;
+    }
+    .tt-summary-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: .65rem .8rem;
+    }
+    .tt-summary-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #aaa;
+      margin-bottom: .35rem;
+    }
+    .tt-summary-text {
+      font-size: .78rem;
+      color: #444;
+      line-height: 1.5;
+    }
+    .tt-topic-tag {
+      display: inline-block;
+      background: #fff5f2;
+      color: #c0392b;
+      border-radius: 20px;
+      padding: 1px 7px;
+      font-size: .68rem;
+      font-weight: 600;
+      margin: 1px 2px 1px 0;
+    }
+    .tt-sent-group { margin-bottom: .45rem; }
+    .tt-sent-group:last-child { margin-bottom: 0; }
+    .tt-sent-header {
+      font-size: .72rem;
+      font-weight: 700;
+      margin-bottom: .15rem;
+    }
+    .tt-sent-pos { color: #27ae60; }
+    .tt-sent-neg { color: #c0392b; }
+    .tt-sent-neu { color: #888; }
+    .tt-sent-quote {
+      font-size: .74rem;
+      color: #555;
+      line-height: 1.4;
+      font-style: italic;
+      border-left: 2px solid #eee;
+      padding-left: .5rem;
+      margin-top: .1rem;
+    }
 
     /* ── Artifacts section ── */
     #artifacts-section {
@@ -1927,6 +1998,9 @@
     }
   }
 
+  // Cache for already-fetched summaries keyed by post URL
+  const _summaryCache = {};
+
   function renderTopicTables(categories) {
     const el = document.getElementById("topic-tables-content");
     if (!categories.length) {
@@ -1936,18 +2010,33 @@
     el.innerHTML = categories.map(cat => {
       const top10 = cat.posts.slice(0, 10);
       const countBadge = `<span class="topic-table-count">${cat.count} posts</span>`;
-      const rows = top10.map((p, i) => {
+      const rows = top10.flatMap((p, i) => {
         const score = fmtScore(p.score || 0);
         const comments = fmtScore(p.num_comments || 0);
-        return `<tr>
+        const sid = `sum-${cat.id}-${i}`;
+        const postRow = `<tr>
           <td class="tt-rank">${i + 1}</td>
           <td><a class="tt-title" href="${escAttr(p.url)}" target="_blank">${esc(p.title)}</a></td>
           <td class="tt-score">${esc(score)}</td>
           <td class="tt-comments">💬 ${esc(comments)}</td>
+          <td style="text-align:right;width:90px">
+            <button class="tt-summary-btn" id="btn-${sid}"
+              onclick="togglePostSummary('${sid}','${escAttr(p.url)}','${escAttr(p.title)}',${JSON.stringify(p.selftext||'').replace(/'/g,"&#39;")})">
+              ▾ Summary
+            </button>
+          </td>
         </tr>`;
+        const summaryRow = `<tr class="tt-summary-row">
+          <td colspan="5">
+            <div class="tt-summary-inner" id="${sid}">
+              <div style="color:#aaa;font-size:.8rem;padding:.5rem">Loading…</div>
+            </div>
+          </td>
+        </tr>`;
+        return [postRow, summaryRow];
       }).join("");
       const empty = top10.length === 0
-        ? `<tr><td colspan="4" style="color:#aaa;padding:.5rem .6rem;font-size:.8rem">No posts matched this category.</td></tr>`
+        ? `<tr><td colspan="5" style="color:#aaa;padding:.5rem .6rem;font-size:.8rem">No posts matched this category.</td></tr>`
         : "";
       return `<div class="topic-table-block">
         <div class="topic-table-title">${esc(cat.label)} ${countBadge}</div>
@@ -1957,11 +2046,102 @@
             <th>Title</th>
             <th class="th-score">Score</th>
             <th class="th-comments">Comments</th>
+            <th></th>
           </tr></thead>
           <tbody>${rows}${empty}</tbody>
         </table>
       </div>`;
     }).join("");
+  }
+
+  async function togglePostSummary(sid, postUrl, title, selftext) {
+    const panel = document.getElementById(sid);
+    const btn   = document.getElementById("btn-" + sid);
+    if (!panel) return;
+
+    const isOpen = panel.classList.contains("open");
+    if (isOpen) {
+      panel.classList.remove("open");
+      btn.classList.remove("open");
+      btn.textContent = "▾ Summary";
+      return;
+    }
+
+    panel.classList.add("open");
+    btn.classList.add("open");
+    btn.textContent = "▴ Summary";
+
+    // Return cached result immediately
+    if (_summaryCache[postUrl]) {
+      renderSummaryPanel(panel, _summaryCache[postUrl]);
+      return;
+    }
+
+    panel.innerHTML = `<div style="color:#aaa;font-size:.8rem;padding:.5rem;grid-column:1/-1">Loading summary…</div>`;
+
+    // Derive permalink from URL: strip domain, strip trailing slash
+    const permalink = postUrl.replace("https://reddit.com", "").replace(/\/?$/, "/");
+
+    try {
+      const res = await fetch("/api/post-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permalink, title, selftext }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "failed");
+      _summaryCache[postUrl] = data;
+      renderSummaryPanel(panel, data);
+    } catch (e) {
+      panel.innerHTML = `<div style="color:#c0392b;font-size:.8rem;padding:.5rem;grid-column:1/-1">Failed: ${esc(e.message)}</div>`;
+    }
+  }
+
+  function renderSummaryPanel(panel, data) {
+    // Card 1 — What user talked about
+    const topics = (data.what_discussed.topics || [])
+      .map(t => `<span class="tt-topic-tag">${esc(t)}</span>`).join("");
+    const excerpt = data.what_discussed.excerpt || "";
+    const card1 = `<div class="tt-summary-card">
+      <div class="tt-summary-label">What OP discussed</div>
+      <div class="tt-summary-text">
+        ${topics ? `<div style="margin-bottom:.35rem">${topics}</div>` : ""}
+        ${esc(excerpt) || '<em>No post body available.</em>'}
+      </div>
+    </div>`;
+
+    // Card 2 — Main question or concern
+    const card2 = `<div class="tt-summary-card">
+      <div class="tt-summary-label">Main question / concern</div>
+      <div class="tt-summary-text">${esc(data.main_question || "—")}</div>
+    </div>`;
+
+    // Card 3 — Reply sentiment
+    const s = data.sentiment;
+    function sentGroup(cls, label, emoji, group) {
+      if (!group.count) return "";
+      const quote = group.best
+        ? `<div class="tt-sent-quote">${esc(group.best.excerpt)}</div>`
+        : "";
+      return `<div class="tt-sent-group">
+        <div class="tt-sent-header ${cls}">${emoji} ${label} (${group.count})</div>
+        ${quote}
+      </div>`;
+    }
+    const sentTotal = s.total ? `<div style="font-size:.7rem;color:#bbb;margin-bottom:.4rem">${s.total} comments analysed</div>` : "";
+    const noComments = !s.total ? `<div style="color:#aaa;font-size:.78rem">No comments fetched.</div>` : "";
+    const card3 = `<div class="tt-summary-card">
+      <div class="tt-summary-label">Reply sentiment</div>
+      <div class="tt-summary-text">
+        ${sentTotal}
+        ${sentGroup("tt-sent-pos", "Positive / helpful", "✅", s.positive)}
+        ${sentGroup("tt-sent-neg", "Concerns / warnings", "⚠️", s.negative)}
+        ${sentGroup("tt-sent-neu", "Informational / neutral", "💬", s.neutral)}
+        ${noComments}
+      </div>
+    </div>`;
+
+    panel.innerHTML = card1 + card2 + card3;
   }
 
   // ── Collection Artifacts ──────────────────────────────────

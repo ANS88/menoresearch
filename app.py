@@ -672,5 +672,92 @@ def api_analyze():
         })
 
 
+_POS_WORDS = [
+    "helped", "worked", "better", "improved", "relief", "recommend", "great",
+    "thank", "success", "effective", "love", "amazing", "wonderful", "positive",
+    "fixed", "resolved", "feels better", "life changing", "game changer",
+    "life-changing", "helpful", "excellent", "perfect", "so good", "doing well",
+]
+_NEG_WORDS = [
+    "worse", "terrible", "failed", "side effect", "stopped", "quit", "warning",
+    "careful", "bad", "awful", "horrible", "negative", "never worked", "gave up",
+    "doesn't work", "didn't work", "not help", "not working", "no relief",
+    "made it worse", "couldn't tolerate", "can't tolerate", "gave me",
+]
+
+
+@app.route("/api/post-summary", methods=["POST"])
+def api_post_summary():
+    """Generate a structured summary for a single post and its comments."""
+    body = request.get_json(force=True, silent=True) or {}
+    permalink = body.get("permalink", "")
+    selftext = body.get("selftext", "").strip()
+    title = body.get("title", "").strip()
+
+    if not permalink:
+        return jsonify({"ok": False, "error": "permalink required"}), 400
+
+    # ── 1. What the user talked about ─────────────────────────
+    text_lower = (title + " " + selftext).lower()
+    topics = [
+        cat["label"]
+        for cat in POST_CATEGORIES
+        if sum(text_lower.count(p) for p in cat["patterns"]) > 0
+    ]
+
+    # First 3 sentences as an excerpt
+    sentences = re.split(r'(?<=[.!?])\s+', selftext) if selftext else []
+    excerpt = " ".join(sentences[:3])[:500] if sentences else (title[:300] if not selftext else "")
+
+    # ── 2. Main question or concern ────────────────────────────
+    question = None
+    for s in sentences:
+        s = s.strip()
+        if "?" in s and len(s) > 15:
+            question = s
+            break
+    if not question:
+        # Try to find a ? anywhere in the title
+        question = title if "?" in title else title
+
+    # ── 3. Fetch comments and classify by sentiment ────────────
+    try:
+        comments = get_comments(permalink, limit=25)
+    except Exception:
+        comments = []
+
+    positive, negative, neutral = [], [], []
+    for c in comments:
+        bl = c.get("body", "").lower()
+        pos = sum(1 for w in _POS_WORDS if w in bl)
+        neg = sum(1 for w in _NEG_WORDS if w in bl)
+        if pos > neg:
+            positive.append(c)
+        elif neg > pos:
+            negative.append(c)
+        else:
+            neutral.append(c)
+
+    def best(cmts):
+        if not cmts:
+            return None
+        top = max(cmts, key=lambda c: (c.get("score", 0), len(c.get("body", ""))))
+        b = top.get("body", "")
+        return {"author": top.get("author", ""), "score": top.get("score", 0),
+                "excerpt": b[:250] + ("…" if len(b) > 250 else "")}
+
+    return jsonify({
+        "ok": True,
+        "what_discussed": {"topics": topics, "excerpt": excerpt},
+        "main_question": question,
+        "sentiment": {
+            "positive": {"count": len(positive), "best": best(positive)},
+            "negative": {"count": len(negative), "best": best(negative)},
+            "neutral":  {"count": len(neutral),  "best": best(neutral)},
+            "total": len(comments),
+        },
+    })
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
