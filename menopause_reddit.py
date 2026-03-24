@@ -96,8 +96,8 @@ def get_all_posts(subreddit="menopause", category="hot", max_pages=10, time_filt
     return results
 
 
-def get_comments(permalink, limit=20):
-    url = f"https://www.reddit.com{permalink}.json?limit={limit}&depth=2"
+def get_comments(permalink, limit=100):
+    url = f"https://www.reddit.com{permalink}.json?limit={limit}&depth=1"
     data = fetch(url)
     comments = []
     try:
