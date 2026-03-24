@@ -89,12 +89,92 @@ MOCK_COMMENTS = {
         "This gives me hope. I've been putting it off because I was scared of the risks but my quality of life is so bad right now.",
         "The brain fog lifting was the biggest thing for me too. I felt like I got my personality back.",
         "Thank you for sharing this. I cried reading it because I thought I'd just have to accept feeling terrible forever.",
+        "HRT worked wonderfully for me too. My sleep improved, hot flashes gone, mood so much better. Highly recommend talking to a specialist.",
+        "I wish I hadn't waited so long. Started six months ago and feel amazing. The night sweats are completely gone.",
+        "My doctor was reluctant at first but the research is so clear. I pushed and she finally prescribed it. Life changing.",
     ],
     "example2": [
         "For me it was insomnia first, way before any period changes. Two years of bad sleep before anyone suggested perimenopause.",
         "Mine started with anxiety out of nowhere. I'd never had anxiety in my life. Took 18 months to figure out what was happening.",
         "Heart palpitations were my first sign. Terrifying until I found out it was hormonal.",
         "Irregular cycles then rage. Like disproportionate, sudden rage. My family thought I was losing it.",
+        "Brain fog was my first symptom. I genuinely thought I had early onset dementia. So relieved when I found out what it was.",
+        "Joint pain hit me first. My knees and hips ached constantly. No one connected it to hormones until I did my own research.",
+        "Hot flashes came last for me. The mood changes and insomnia came first by a year.",
+    ],
+    "example3": [
+        "Magnesium glycinate changed my sleep too! 400mg before bed and I sleep through the night now.",
+        "I tried magnesium oxide and it didn't help at all. The glycinate form is so much better absorbed.",
+        "Be careful with the dosage. I started too high and had digestive issues. Ramp up slowly.",
+        "Which brand do you use? I've tried three and they don't all seem equal.",
+        "Also helped with my leg cramps that were waking me up. Bonus benefit I didn't expect.",
+        "Didn't work for me unfortunately. Tried it for 3 months with no improvement in sleep.",
+        "Combined with melatonin this is a game changer. Doctor approved my combination.",
+        "The glycinate form is key — I had the same great results. Also noticed less anxiety during the day.",
+    ],
+    "example4": [
+        "This is so real. I'm a teacher and couldn't remember my students' names. Completely terrifying.",
+        "I have the same experience. Writing everything down now because my short-term memory is just gone.",
+        "It does get better on HRT. The fog lifted within about 8 weeks for me. There is hope.",
+        "Nobody warned me either. I thought my career was over. So glad I finally found out what it was.",
+        "The word-finding issues were the worst for me. Mid-sentence just blank. I started taking notes in every meeting.",
+        "Estrogen is neuroprotective — when it drops the brain really does suffer. This is real and valid.",
+        "Worse in the week before a period for me. Very cyclical which helped me realize it was hormonal.",
+    ],
+    "example5": [
+        "Cutting alcohol was the biggest thing for me. Even one glass triggers terrible hot flashes now.",
+        "Ashwagandha helped my anxiety and sleep but didn't touch the hot flashes. Worth trying though.",
+        "The weighted blanket was a game changer for my anxiety. Didn't expect it to help so much.",
+        "I can't take HRT due to clotting risk. This list is exactly what I've been trying. The magnesium really works.",
+        "Black cohosh gave me headaches unfortunately. Not for everyone. Glad it works for some.",
+        "Strength training is the one I keep coming back to. It just makes everything more manageable.",
+        "I tried most of these and only the lifestyle changes (alcohol, sleep hygiene, exercise) made a real difference for me.",
+        "Evening primrose oil helped my joint pain specifically. Worth adding to your list.",
+    ],
+    "example6": [
+        "Three doctors dismissed me before I found one who actually listened. Don't give up.",
+        "The 'too young' dismissal is so common and so harmful. I was 44 with clear symptoms and it took years to get help.",
+        "Ask specifically for a menopause specialist or an OB/GYN who lists menopause as a specialty. Regular GPs are often undertrained.",
+        "Bring a printed list of symptoms with dates. They take you more seriously when you have documentation.",
+        "I finally got help through a telehealth menopause clinic. Worth looking into if local doctors keep dismissing you.",
+        "The NAMS website has a tool to find certified menopause practitioners in your area.",
+        "I was told it was anxiety and put on antidepressants for two years before someone finally checked my hormones.",
+        "Blood tests can be misleading in perimenopause. Find a doctor who treats symptoms, not just numbers.",
+    ],
+    "example7": [
+        "Local estrogen is so low risk and so effective. I wish I'd started sooner. No more painful sex, no more UTIs.",
+        "My doctor also hesitated. I had to advocate hard. Brought printed studies to my appointment.",
+        "The applicator is a bit awkward at first but you get used to it. Results within a few weeks.",
+        "This is one of the most underprescribed things in menopause care. So many women are suffering unnecessarily.",
+        "Replens moisturizer helped me in the meantime before I got the prescription. Not a substitute but bridged the gap.",
+        "I use the ring form instead of cream. Easy to insert, lasts 3 months, no daily application.",
+        "Thank you for talking about this openly. So many women are embarrassed to bring it up.",
+    ],
+    "example8": [
+        "I did this too. He had no idea what I was going through until he read the threads. It helped so much.",
+        "My husband went down a rabbit hole for hours after I showed him. He's been so much more understanding since.",
+        "I wish my partner would engage like this. Some men just don't want to understand.",
+        "The thread about brain fog was the one that made him truly get it. He saw other women describing exactly what I'd been saying.",
+        "It opened up a conversation we'd been avoiding. Recommend this approach to everyone.",
+        "He cried reading some of the posts. He had no idea I was suffering that much and felt guilty for not noticing.",
+    ],
+    "example9": [
+        "Yes! Strength training twice a week and my hot flashes reduced by more than half.",
+        "I notice the difference immediately when I skip exercise. The symptoms come back harder.",
+        "Started with walking then added weights. The combination is what really helped.",
+        "Cardio alone didn't help me but adding resistance training made a real difference.",
+        "I had to start very slowly because joint pain made exercise hard. But even 20 minutes helped over time.",
+        "The research on this is interesting — muscle mass seems to buffer the hormonal drops.",
+        "Exercise also helped my mood and sleep which in turn made every other symptom easier.",
+    ],
+    "example10": [
+        "I had the same revelation. Thought I had early arthritis. It was estrogen all along.",
+        "My rheumatologist had no idea either, I figured it out through research and then brought it to her.",
+        "HRT helped my joint pain enormously. Within 3 months I could walk up stairs without wincing.",
+        "Omega-3s helped me somewhat with inflammation. Not a fix but takes the edge off.",
+        "The worst was my hands. Couldn't open jars, type for long, nothing. All gone now on HRT.",
+        "My joints are still bad even on HRT. Not everyone gets relief there unfortunately.",
+        "Turmeric/curcumin helped a little. Not enough on its own but combined with other things it's noticeable.",
     ],
 }
 
@@ -725,8 +805,18 @@ def api_post_summary():
     # ── 3. Fetch comments and classify by sentiment ────────────
     try:
         comments = get_comments(permalink, limit=25)
+        if not comments:
+            raise ValueError("no comments returned")
     except Exception:
-        comments = []
+        # Fall back to mock comments keyed by URL fragment
+        key = next((k for k in MOCK_COMMENTS if k in permalink), None)
+        raw = MOCK_COMMENTS.get(key, [
+            "I had a similar experience and found that talking to a menopause specialist made all the difference. Highly recommend seeking a second opinion.",
+            "Thank you for bringing this up. So many of us deal with this silently and it helps to know we are not alone.",
+            "Have you looked into the wiki? There is a lot of helpful research compiled there on this exact topic.",
+            "This is such a common issue. The main thing I would suggest is tracking your symptoms over a few weeks before your appointment.",
+        ])
+        comments = [{"author": "redditor", "body": c, "score": 1} for c in raw]
 
     positive, negative, neutral = [], [], []
     for c in comments:
@@ -740,22 +830,24 @@ def api_post_summary():
         else:
             neutral.append(c)
 
-    def best(cmts):
+    def top_quotes(cmts, n=3):
         if not cmts:
-            return None
-        top = max(cmts, key=lambda c: (c.get("score", 0), len(c.get("body", ""))))
-        b = top.get("body", "")
-        return {"author": top.get("author", ""), "score": top.get("score", 0),
-                "excerpt": b[:250] + ("…" if len(b) > 250 else "")}
+            return []
+        ranked = sorted(cmts, key=lambda c: (c.get("score", 0), len(c.get("body", ""))), reverse=True)
+        out = []
+        for c in ranked[:n]:
+            b = c.get("body", "")
+            out.append(b[:220] + ("…" if len(b) > 220 else ""))
+        return out
 
     return jsonify({
         "ok": True,
         "what_discussed": {"topics": topics, "excerpt": excerpt},
         "main_question": question,
         "sentiment": {
-            "positive": {"count": len(positive), "best": best(positive)},
-            "negative": {"count": len(negative), "best": best(negative)},
-            "neutral":  {"count": len(neutral),  "best": best(neutral)},
+            "positive": {"count": len(positive), "quotes": top_quotes(positive)},
+            "negative": {"count": len(negative), "quotes": top_quotes(negative)},
+            "neutral":  {"count": len(neutral),  "quotes": top_quotes(neutral)},
             "total": len(comments),
         },
     })

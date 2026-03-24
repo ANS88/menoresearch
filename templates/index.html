@@ -2121,39 +2121,51 @@
     const card1 = `<div class="tt-summary-card">
       <div class="tt-summary-label">What OP discussed</div>
       <div class="tt-summary-text">
-        ${topics ? `<div style="margin-bottom:.35rem">${topics}</div>` : ""}
-        ${esc(excerpt) || '<em>No post body available.</em>'}
+        ${topics ? `<div style="margin-bottom:.4rem">${topics}</div>` : ""}
+        ${esc(excerpt) || '<em style="color:#bbb">No post body available.</em>'}
       </div>
     </div>`;
 
     // Card 2 — Main question or concern
     const card2 = `<div class="tt-summary-card">
       <div class="tt-summary-label">Main question / concern</div>
-      <div class="tt-summary-text">${esc(data.main_question || "—")}</div>
+      <div class="tt-summary-text" style="font-style:italic;color:#555">${esc(data.main_question || "—")}</div>
     </div>`;
 
-    // Card 3 — Reply sentiment
+    // Card 3 — Reply sentiment breakdown
     const s = data.sentiment;
-    function sentGroup(cls, label, emoji, group) {
+    const total = s.total || 0;
+
+    function pct(n) { return total ? Math.round(n / total * 100) : 0; }
+
+    function sentBlock(cls, barColor, label, emoji, group) {
       if (!group.count) return "";
-      const quote = group.best
-        ? `<div class="tt-sent-quote">${esc(group.best.excerpt)}</div>`
-        : "";
+      const p = pct(group.count);
+      const quotes = (group.quotes || []).map(q =>
+        `<div class="tt-sent-quote">${esc(q)}</div>`
+      ).join("");
       return `<div class="tt-sent-group">
-        <div class="tt-sent-header ${cls}">${emoji} ${label} (${group.count})</div>
-        ${quote}
+        <div class="tt-sent-header ${cls}">
+          ${emoji} ${label}
+          <span style="font-weight:400;color:#999;margin-left:.3rem">${group.count} of ${total} (${p}%)</span>
+        </div>
+        <div style="height:4px;background:#f0f0f0;border-radius:2px;margin:.25rem 0 .4rem">
+          <div style="height:4px;width:${p}%;background:${barColor};border-radius:2px"></div>
+        </div>
+        ${quotes}
       </div>`;
     }
-    const sentTotal = s.total ? `<div style="font-size:.7rem;color:#bbb;margin-bottom:.4rem">${s.total} comments analysed</div>` : "";
-    const noComments = !s.total ? `<div style="color:#aaa;font-size:.78rem">No comments fetched.</div>` : "";
+
+    const noComments = !total
+      ? `<div style="color:#bbb;font-size:.78rem">No comments could be fetched for this post.</div>` : "";
+
     const card3 = `<div class="tt-summary-card">
-      <div class="tt-summary-label">Reply sentiment</div>
+      <div class="tt-summary-label">Reply sentiment <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#bbb">${total ? `· ${total} comments` : ""}</span></div>
       <div class="tt-summary-text">
-        ${sentTotal}
-        ${sentGroup("tt-sent-pos", "Positive / helpful", "✅", s.positive)}
-        ${sentGroup("tt-sent-neg", "Concerns / warnings", "⚠️", s.negative)}
-        ${sentGroup("tt-sent-neu", "Informational / neutral", "💬", s.neutral)}
         ${noComments}
+        ${sentBlock("tt-sent-pos", "#27ae60", "Positive / helpful",       "✅", s.positive)}
+        ${sentBlock("tt-sent-neg", "#e74c3c", "Concerns / warnings",      "⚠️", s.negative)}
+        ${sentBlock("tt-sent-neu", "#888",    "Informational / neutral",   "💬", s.neutral)}
       </div>
     </div>`;
 
