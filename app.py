@@ -804,7 +804,7 @@ def api_post_summary():
 
     # ── 3. Fetch comments and classify by sentiment ────────────
     try:
-        comments = get_comments(permalink, limit=100)
+        comments = get_comments(permalink)
         if not comments:
             raise ValueError("no comments returned")
     except Exception:
